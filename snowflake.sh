@@ -27,7 +27,7 @@ now_epoch=$(date +%s%N)
 data_size=$(snowsql --schemaname INFORMATION_SCHEMA --dbname "${SNOWFLAKE_DB:=PYPI}" --warehouse "${SNOWFLAKE_WAREHOUSE:=2XLARGE}" --rolename "${SNOWFLAKE_ROLE:=ACCOUNTADMIN}" --query "SELECT ACTIVE_BYTES FROM TABLE_STORAGE_METRICS WHERE TABLE_NAME = 'PYPI' AND ACTIVE_BYTES > 0;" -o friendly=False  -o header=False -o output_format=plain -o timing=False)
 echo "{\"system\":\"Snowflake\",\"date\":\"${now}\",\"machine\":\"${spec}\",\"config\":\"${config}\",\"comment\":\"\",\"tags\":[\"Cloud\"],\"data_size\":${data_size},\"result\":[" > $folder/snowflake_temp_${now_epoch}.json
 
-cat $folder/sample.sql | while read query; do
+cat $folder/snowflake_queries.sql | while read query; do
     echo -n "[" >> $folder/snowflake_temp_${now_epoch}.json
     for i in $(seq 1 $TRIES); do
         RES=$(echo $query | snowsql --schemaname ${SNOWFLAKE_SCHEMA:=PYPI} --dbname ${SNOWFLAKE_DB:=PYPI} --warehouse ${SNOWFLAKE_WAREHOUSE:=2XLARGE} -o echo=False -o timing=True -o friendly=False | grep -E -o 'Time Elapsed: [0-9.]+s' | grep -E -o '[0-9.]+' 2>&1)

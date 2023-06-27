@@ -1,2 +1,0 @@
-SELECT toStartOfDay(date), count() as count FROM pypi WHERE project = 'boto3' AND date >= '2023-06-23'::DateTime - toIntervalDay(90) GROUP BY date ORDER BY date ASC;
-SELECT toStartOfInterval(timestamp, INTERVAL 13824 second) as period, count() as count FROM pypi WHERE project = 'boto3' AND date >= '2023-06-23'::Date - toIntervalDay(25) AND date  <= '2023-06-23'::Date - toIntervalDay(9) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(25) AND timestamp  <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(9) GROUP BY period ORDER BY period ASC;
