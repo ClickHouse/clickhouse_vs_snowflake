@@ -3,6 +3,7 @@
   "date": "2023-06-27",
   "machine": "2XLARGE",
   "comment": "",
+  "config": "default",
   "tags": [
     "Cloud"
   ],

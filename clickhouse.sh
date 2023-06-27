@@ -25,10 +25,16 @@ if [ -z "$spec" ] ; then
   exit 1
 fi
 
+config=$3
+if [ -z "$config" ] ; then
+  echo "config must be specified"
+  exit 1
+fi
+
 data_size=$(/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --query="SELECT sum(total_bytes) FROM system.tables WHERE table = 'pypi'")
 now=$(date +'%Y-%m-%d')
 now_epoch=$(date +%s%N)
-echo "{\"system\":\"ClickHouse\",\"date\":\"${now}\",\"machine\":\"${spec}\",\"comment\":\"\",\"tags\":[\"${tag}\"],\"data_size\":${data_size},\"result\":[" > $folder/clickhouse_temp_${now_epoch}.json
+echo "{\"system\":\"ClickHouse\",\"date\":\"${now}\",\"machine\":\"${spec}\",\"config\":\"${config}\",\"comment\":\"\",\"tags\":[\"${tag}\"],\"data_size\":${data_size},\"result\":[" > $folder/clickhouse_temp_${now_epoch}.json
 
 echo "dropping file system cache"
 /opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --format=Null --query="SYSTEM DROP FILESYSTEM CACHE${on_cluster}"

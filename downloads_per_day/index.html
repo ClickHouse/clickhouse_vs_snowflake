@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>PlayBench — a Benchmark For play.clickhouse.com</title>
+    <title><title></title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -284,8 +284,8 @@
     <script type="text/javascript">
 
 const data = [
-{"system":"ClickHouse","date":"2023-06-27","machine":"720_GB","comment":"","tags":["Cloud"],"data_size":991638026556,"result":[[1.51,1.312,1.313],[0.813,1.115,0.425]],"source":"downloads_per_day/results/clickhouse_720_GB.json"}
-,{"system":"Snowflake","date":"2023-06-27","machine":"2XLARGE","comment":"","tags":["Cloud"],"data_size":2186843044352,"result":[[9.187,9.54,9.034],[7.993,8.678,8.282]],"source":"downloads_per_day/results/snowflake_2XLARGE.json"}
+{"system":"ClickHouse","date":"2023-06-27","machine":"720_GB","comment":"","config":"default","tags":["Cloud"],"data_size":991638026556,"result":[[1.51,1.312,1.313],[0.813,1.115,0.425]],"source":"downloads_per_day/results/clickhouse_720_GB.json"}
+,{"system":"Snowflake","date":"2023-06-27","machine":"2XLARGE","comment":"","config":"default","tags":["Cloud"],"data_size":2186843044352,"result":[[9.187,9.54,9.034],[7.993,8.678,8.282]],"source":"downloads_per_day/results/snowflake_2XLARGE.json"}
 ]; // end of data
 const queries = [
 "SELECT toStartOfDay(date), count() as count FROM pypi WHERE project = 'boto3' AND date >= '2023-06-23'::DateTime - toIntervalDay(90) GROUP BY date ORDER BY date ASC;"
@@ -496,8 +496,8 @@ const queries = [
 
 <div class="header stick-left">
     <span class="nowrap themes"><span id="toggle-dark">🌚</span><span id="toggle-light">🌞</span></span>
-    <h1>PlayBench — a Benchmark For play.clickhouse.com</h1>
-    <a href="https://github.com/gingerwizard/PlayBench/">Methodology</a> | <a href="https://github.com/gingerwizard/PlayBench/">Reproduce and Validate the Results</a> | <a href="https://github.com/gingerwizard/PlayBench/">Add a System</a> | <a href="https://github.com/gingerwizard/PlayBench/">Report Mistake</a>
+    <h1>ClickHouse vs Snowflake</h1>
+    <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Methodology</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Reproduce and Validate the Results</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Add a System</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Report Mistake</a>
 </div>
 
 <table class="selectors-container stick-left">
@@ -520,9 +520,9 @@ const queries = [
         </td>
     </tr>
     <tr>
-        <th>Cluster size: </th>
-        <td id="selectors_cluster_size">
-            <a id="select-all-cluster-sizes" class="selector selector-active">All</a>
+        <th>Configuration: </th>
+        <td id="selectors_config">
+            <a id="select-all-configs" class="selector selector-active">All</a>
         </td>
     </tr>
     <tr>
@@ -575,7 +575,7 @@ let selectors = {
     "system": {},
     "type": {},
     "machine": {},
-    "cluster_size": {},
+    "config": {},
     "metric": "hot",
     "queries": [],
 };
@@ -602,7 +602,7 @@ if (new_theme && new_theme != theme) {
 let systems = document.getElementById('selectors_system');
 let types = document.getElementById('selectors_type');
 let machines = document.getElementById('selectors_machine');
-let cluster_sizes = document.getElementById('selectors_cluster_size');
+let configs = document.getElementById('selectors_config');
 
 let unique_systems = [... new Set(data.map(elem => elem.system))];
 
@@ -662,20 +662,20 @@ unique_systems.map(elem => {
     selector.addEventListener('click', e => toggle(e, elem, selectors.machine));
 });
 
-[... new Set(data.map(elem => elem.cluster_size))].sort(
+[... new Set(data.map(elem => elem.config))].sort(
     (a, b) => ((typeof(b) === 'number') - (typeof(a) === 'number')) || (a - b)).map(elem => {
     let selector = document.createElement('a');
     selector.className = 'selector selector-active';
     selector.appendChild(document.createTextNode(elem));
-    cluster_sizes.appendChild(selector);
-    if (!(elem in selectors.cluster_size)) { selectors.cluster_size[elem] = true; }
-    selector.addEventListener('click', e => toggle(e, elem, selectors.cluster_size));
+    configs.appendChild(selector);
+    if (!(elem in selectors.config)) { selectors.config[elem] = true; }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.config));
 });
 
 document.getElementById('select-all-systems').addEventListener('click', e => toggleAll(e, selectors.system));
 document.getElementById('select-all-types').addEventListener('click', e => toggleAll(e, selectors.type));
 document.getElementById('select-all-machines').addEventListener('click', e => toggleAll(e, selectors.machine));
-document.getElementById('select-all-cluster-sizes').addEventListener('click', e => toggleAll(e, selectors.cluster_size));
+document.getElementById('select-all-configs').addEventListener('click', e => toggleAll(e, selectors.config));
 
 [...document.getElementById('selectors_run').querySelectorAll('a')].map(elem => elem.addEventListener('click', e => {
     [...e.target.parentElement.querySelectorAll('a')].map(elem => { elem.className = elem == e.target ? 'selector selector-active' : 'selector' });
@@ -691,7 +691,7 @@ function updateSelectors() {
     [...systems.childNodes].map(elem => { elem.className = selectors.system[elem.innerText] ? 'selector selector-active' : 'selector' });
     [...types.childNodes].map(elem => { elem.className = selectors.type[elem.innerText] ? 'selector selector-active' : 'selector' });
     [...machines.childNodes].map(elem => { elem.className = selectors.machine[elem.innerText] ? 'selector selector-active' : 'selector' });
-    [...cluster_sizes.childNodes].map(elem => { elem.className = selectors.cluster_size[elem.innerText] ? 'selector selector-active' : 'selector' });
+    [...configs.childNodes].map(elem => { elem.className = selectors.config[elem.innerText] ? 'selector selector-active' : 'selector' });
 
     [...document.getElementById('selectors_run').querySelectorAll('a')].map(elem => {
         elem.className = elem.id == 'selector-metric-' + selectors.metric ? 'selector selector-active' : 'selector' });
@@ -790,7 +790,7 @@ function renderSummary(filtered_data) {
 
         if (!elem.fake) {
             let link = document.createElement('a');
-            link.appendChild(document.createTextNode(`${elem.system} (${Number.isInteger(elem.cluster_size) && elem.cluster_size > 1 ? elem.cluster_size + '×': ''}${elem.machine})`));
+            link.appendChild(document.createTextNode(`${elem.system} (${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine})`));
             link.href = "https://github.com/ClickHouse/ClickBench/blob/main/" + elem.source;
             td_name.appendChild(link);
         } else {
@@ -888,7 +888,7 @@ function render() {
     let filtered_data = data.filter(elem =>
         selectors.system[elem.system] &&
         selectors.machine[elem.machine] &&
-        selectors.cluster_size[elem.cluster_size] &&
+        selectors.config[elem.config] &&
         elem.tags.filter(type => selectors.type[type]).length > 0);
 
     let nothing_selected_elem = document.getElementById('nothing-selected');
@@ -930,7 +930,7 @@ function render() {
     sorted_indices.map(idx => {
         const elem = filtered_data[idx];
         let th = document.createElement('th');
-        th.appendChild(document.createTextNode(`${elem.system}\n(${Number.isInteger(elem.cluster_size) && elem.cluster_size > 1 ? elem.cluster_size + '×': ''}${elem.machine})`));
+        th.appendChild(document.createTextNode(`${elem.system}\n(${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine})`));
         th.className = 'th-entry';
         th.dataset.system = elem.system;
         details_head.appendChild(th);

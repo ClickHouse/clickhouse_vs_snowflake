@@ -34,3 +34,6 @@ fi
     sed '1,/^\]; \/\/ end of queries$/d' index.html.template
     set +o noglob
 ) > $folder/index.html
+
+
+#ClickHouse vs Snowflake — a Benchmark For play.clickhouse.com

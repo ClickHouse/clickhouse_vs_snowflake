@@ -103,47 +103,52 @@ Queries consist of 6 different query types, each in their own folder, aimed to t
 
 ## Running tests
 
-Each folder coRun for a specific folder for both systems.
+Each folder contains a specific query set, with a `queries.sql` for both databases.
 
 ### ClickHouse
 
 ```bash
+# defaults
 export CLICKHOUSE_HOST=localhost
 export CLICKHOUSE_USER=default
 export CLICKHOUSE_PASSWORD=
 
-./clickhouse <folder | query set> <cloud> <spec>
+./clickhouse <folder> <cloud> <spec> <config>
 
 e.g.
 
-./clickhouse downloads_per_day true "720 GB"
+./clickhouse downloads_per_day true "720_GB" "default"
 ```
+
+Ensure any test runs are documented in the respective folders `README.md`, providing an explanation of the spec and config.
 
 ### Snowflake
 
 Ensure [snowsql is installed and authenticated]() i.e. `snowsql` from the command line should connect to your account.
 
 ```bash
+# defaults - assumes creation as documented above
 export SNOWFLAKE_WAREHOUSE=2XLARGE
 export SNOWFLAKE_ROLE=ACCOUNTADMIN
 export SNOWFLAKE_DB=PYPI
 export SNOWFLAKE_SCHEMA=PYPI
 
-./snowflake <folder | query set> <spec>
+# use "spec" to specify warehouse size and "config" to specify any special config e.g. "clustering"
+./snowflake <folder> <spec> <config>
 
 e.g.
 
-./snowflake downloads_per_day 2XLARGE
-sed -r -e 's/^(.*)$/\1 \1 \1/' ./folder/snowflake_queries.sql |  snowsql --region eu-central-1 --schemaname PUBLIC --dbname HITS --warehouse TEST >> results.txt
-
+./snowflake downloads_per_day 2XLARGE "default"
 ```
+
+Ensure any test runs are documented in the respective folders `README.md`, providing an explanation of the spec and config.
 
 ### Producing results
 
 A summary page can be generated for each query set. Ensure you have run the tests for both ClickHouse and Snowflake and a results file has been generated for each.
 
 ```bash
-./generate-results.sh <folder | query set>
+./generate-results.sh <folder | query set> 
 ```
 
-This will produce an `index.html` file which can be opened in the target folder.
+This will produce an `index.html` file in the target folder which can be opened in a browser.
