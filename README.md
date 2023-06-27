@@ -55,7 +55,7 @@ See specific sub folders for potential schema optimizations for each query type.
 
 ### Snowflake
 
-TODO - add role, schema, warehouse setup
+TODO - add database, add role, schema, warehouse setup
 
 
 ## Queries
@@ -108,22 +108,33 @@ Each folder coRun for a specific folder for both systems.
 ### ClickHouse
 
 ```bash
-./clickhouse <folder | query set> <cloud>
+export CLICKHOUSE_HOST=localhost
+export CLICKHOUSE_USER=default
+export CLICKHOUSE_PASSWORD=
+
+./clickhouse <folder | query set> <cloud> <spec>
 
 e.g.
 
-./clickhouse downloads_per_day true
+./clickhouse downloads_per_day true "720 GB"
 ```
 
 ### Snowflake
 
+Ensure [snowsql is installed and authenticated]() i.e. `snowsql` from the command line should connect to your account.
+
 ```bash
-./snowflake <folder | query set>
+export SNOWFLAKE_WAREHOUSE=2XLARGE
+export SNOWFLAKE_ROLE=ACCOUNTADMIN
+export SNOWFLAKE_DB=PYPI
+export SNOWFLAKE_SCHEMA=PYPI
+
+./snowflake <folder | query set> <spec>
 
 e.g.
 
-./snowflake downloads_per_day
-sed -r -e 's/^(.*)$/\1 \1 \1/' ./folder/clickhouse_queries.sql | snowsql --schemaname pypi --dbname pypi --warehouse "2XLARGE" --rolename ACCOUNTADMIN > results.txt
+./snowflake downloads_per_day 2XLARGE
+sed -r -e 's/^(.*)$/\1 \1 \1/' ./folder/snowflake_queries.sql |  snowsql --region eu-central-1 --schemaname PUBLIC --dbname HITS --warehouse TEST >> results.txt
 
 ```
 
