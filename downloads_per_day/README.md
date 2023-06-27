@@ -1,7 +1,7 @@
 
 # Overview
 
-- Aims to test rendering and filtering of line chart showing downloads for a project over time.
+- Aims to test rendering and filtering of a line chart showing downloads for a project over time.
 - This test aggregates downloads by day for the last 90 days, filtering by a project. A narrower time filter is then applied to a random time frame (same random values for both databases).
 - By default, this uses the 100 most popular projects, for a total of 200 queries.
 - This simulates a user viewing an overview of downloads for a project (e.g. as a line chart) before drilling down on a timeframe.

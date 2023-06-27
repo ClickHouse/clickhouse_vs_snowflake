@@ -86,6 +86,9 @@ Queries consist of 6 different query types, each in their own folder, aimed to t
 
 #### Downloads per day
 
+Aims to test rendering of a line chart showing downloads for a project over time. A time filter is in turn applied. This is 2-step query process is repeated for a set of projects.
+
+More [here](./downloads_per_day/README.md)
 
 #### Downloads per day by python version
 
@@ -113,11 +116,11 @@ export CLICKHOUSE_HOST=localhost
 export CLICKHOUSE_USER=default
 export CLICKHOUSE_PASSWORD=
 
-./clickhouse <folder> <cloud> <spec> <config>
+./clickhouse.sh <folder> <cloud> <spec> <config>
 
 e.g.
 
-./clickhouse downloads_per_day true "720_GB" "default"
+./clickhouse.sh downloads_per_day true "720_GB" "default"
 ```
 
 Ensure any test runs are documented in the respective folders `README.md`, providing an explanation of the spec and config.
@@ -134,11 +137,11 @@ export SNOWFLAKE_DB=PYPI
 export SNOWFLAKE_SCHEMA=PYPI
 
 # use "spec" to specify warehouse size and "config" to specify any special config e.g. "clustering"
-./snowflake <folder> <spec> <config>
+./snowflake.sh <folder> <spec> <config>
 
 e.g.
 
-./snowflake downloads_per_day 2XLARGE "default"
+./snowflake.sh downloads_per_day 2XLARGE "default"
 ```
 
 Ensure any test runs are documented in the respective folders `README.md`, providing an explanation of the spec and config.
