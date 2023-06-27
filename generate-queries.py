@@ -5,8 +5,8 @@ import clickhouse_connect
 
 
 def downloads_per_day(projects, max_datetime, max_date):
-    with open('downloads_per_day/clickhouse_queries.txt', 'w') as click_queries_file, \
-            open('downloads_per_day/snowflake_queries.txt', 'w') as snow_queries_file:
+    with open('downloads_per_day/clickhouse_queries.sql', 'w') as click_queries_file, \
+            open('downloads_per_day/snowflake_queries.sql', 'w') as snow_queries_file:
         for project in projects:
             lower_n_days = 90
             click_queries_file.write(
@@ -36,8 +36,8 @@ def downloads_per_day(projects, max_datetime, max_date):
 
 
 def downloads_per_day_by_python_version(projects, max_datetime, max_date):
-    with open('downloads_per_day_by_python_version/clickhouse_queries.txt', 'w') as click_queries_file, \
-            open('downloads_per_day_by_python_version/snowflake_queries.txt', 'w') as snow_queries_file:
+    with open('downloads_per_day_by_python_version/clickhouse_queries.sql', 'w') as click_queries_file, \
+            open('downloads_per_day_by_python_version/snowflake_queries.sql', 'w') as snow_queries_file:
         for project in projects:
             lower_n_days = 90
             upper_n_days = 0
@@ -72,8 +72,8 @@ def downloads_per_day_by_python_version(projects, max_datetime, max_date):
 
 
 def downloads_per_day_by_system(projects, max_datetime, max_date):
-    with open('downloads_per_day_by_system/clickhouse_queries.txt', 'w') as click_queries_file, \
-            open('downloads_per_day_by_system/snowflake_queries.txt', 'w') as snow_queries_file:
+    with open('downloads_per_day_by_system/clickhouse_queries.sql', 'w') as click_queries_file, \
+            open('downloads_per_day_by_system/snowflake_queries.sql', 'w') as snow_queries_file:
         for project in projects:
             lower_n_days = 90
             click_queries_file.write(f"SELECT date as day, system.name as system, count() AS count FROM pypi "
@@ -117,8 +117,8 @@ def downloads_per_day_by_system(projects, max_datetime, max_date):
 
 
 def top_file_type_per_project(projects, max_datetime, max_date):
-    with open('top_file_type_per_project/clickhouse_queries.txt', 'w') as click_queries_file, \
-            open('top_file_type_per_project/snowflake_queries.txt', 'w') as snow_queries_file:
+    with open('top_file_type_per_project/clickhouse_queries.sql', 'w') as click_queries_file, \
+            open('top_file_type_per_project/snowflake_queries.sql', 'w') as snow_queries_file:
         for project in projects:
             lower_n_days = 90
             upper_n_days = 0
@@ -144,8 +144,8 @@ def top_file_type_per_project(projects, max_datetime, max_date):
 
 
 def top_projects_by_distro(distros, max_datetime, max_date):
-    with open('top_projects_by_distro/clickhouse_queries.txt', 'w') as click_queries_file, \
-            open('top_projects_by_distro/snowflake_queries.txt', 'w') as snow_queries_file:
+    with open('top_projects_by_distro/clickhouse_queries.sql', 'w') as click_queries_file, \
+            open('top_projects_by_distro/snowflake_queries.sql', 'w') as snow_queries_file:
         for distro in distros:
             lower_n_days = 90
             upper_n_days = 0
@@ -171,8 +171,8 @@ def top_projects_by_distro(distros, max_datetime, max_date):
 
 
 def top_sub_projects(base_projects, max_datetime, max_date):
-    with open('top_sub_projects/clickhouse_queries.txt', 'w') as click_queries_file, \
-            open('top_sub_projects/snowflake_queries.txt', 'w') as snow_queries_file:
+    with open('top_sub_projects/clickhouse_queries.sql', 'w') as click_queries_file, \
+            open('top_sub_projects/snowflake_queries.sql', 'w') as snow_queries_file:
         for base_project in base_projects:
             lower_n_days = 90
             upper_n_days = 0
