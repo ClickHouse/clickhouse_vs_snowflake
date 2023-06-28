@@ -199,9 +199,7 @@ ORDER BY day ASC, count DESC;
 Materialized view for speeding up the subquery. Conceptually similar to above ClickHouse optimization.
 
 ```sql
-CREATE OR REPLACE MATERIALIZED VIEW cnt_by_system AS
-  SELECT project, system['name'], count(*) as count FROM PYPI.PYPI_CLUSTERED.PYPI GROUP BY project, system['name'];
+CREATE OR REPLACE MATERIALIZED VIEW cnt_by_system AS SELECT project, system['name'] as system_name, count(*) as count FROM PYPI.PYPI.PYPI GROUP BY project, system_name;
 
-
-
+ALTER MATERIALIZED VIEW cnt_by_system CLUSTER BY (project);
 ```
