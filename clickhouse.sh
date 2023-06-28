@@ -25,7 +25,7 @@ if [ -z "$spec" ] ; then
   exit 1
 fi
 
-config=$3
+config=$4
 if [ -z "$config" ] ; then
   echo "config must be specified"
   exit 1
