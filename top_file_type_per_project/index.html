@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ClickHouse vs Snowflake - Top file types per project</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="data:image/gif;base64,R0lGODlhIAAgAOMPAHMUEmkyHOcbF8UvJts/E3BeOih1YziiQmebLt2AFjeyQKqZKNWPjLybfPfcDP///yH5BAEKAA8ALAAAAAAgACAAAATg8MlJ6ws26z0EGcQmZgAhnN6oPg0wDA0zrGMTAADDxEJCZ4Gba8c4hX4Uw+XWeYGOyMdhgkuYrAToqIBQHBCIKQ6wcJhPyINarUBcyuYE+ndQeOsKuNlxmv3CdnZfew5yAlEPC12BhFhZiBJ2CI1GkBMHeoV9PpYPhIUDBqIFnZ8EBaKplqYMqaqIewl8A6iupFF7C1YCoaJqq4UOWQIBBmtTuIQmWWxekJQeYWuWcFYPfl+dLAELOxML2hIYDeEWt7flEufknTZB7+8NBeyINxjqDwU4QYg26BTu6KVTEQEAOw==">
+    <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --color: black;
+            --title-color: black;
+            --background-color: white;
+
+            --link-color: #08F;
+            --link-hover-color: #F40;
+
+            --selector-text-color: black;
+            --selector-active-text-color: black;
+            --selector-background-color: #EEE;
+            --selector-active-background-color: #FFCB80;
+            --selector-hover-text-color: black;
+            --selector-hover-background-color: #FDB;
+
+            --summary-every-other-row-color: #F8F8F8;
+            --highlight-color: #EEE;
+            --bar-color: #FFCB80;
+
+            --tooltip-text-color: white;
+            --tooltip-background-color: black;
+
+            --nothing-selected-color: #CCC;
+            --shadow-color: grey;
+        }
+
+        [data-theme="dark"] {
+            --color: #CCC;
+            --title-color: white;
+            --background-color: #04293A;
+
+            --link-color: #8CF;
+            --link-hover-color: #FFF;
+
+            --selector-text-color: white;
+            --selector-background-color: #444;
+            --selector-active-text-color: white;
+            --selector-active-background-color: #088;
+            --selector-hover-text-color: black;
+            --selector-hover-background-color: white;
+
+            --summary-every-other-row-color: #042e41;
+            --highlight-color: #064663;
+            --bar-color: #088;
+
+            --tooltip-text-color: white;
+            --tooltip-background-color: #444;
+
+            --nothing-selected-color: #666;
+            --shadow-color: black;
+        }
+
+        html, body {
+            color: var(--color);
+            background-color: var(--background-color);
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: auto;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            padding: 1% 3% 0 3%;
+        }
+
+        h1 {
+            color: var(--title-color);
+        }
+
+        table {
+             border-spacing: 1px;
+        }
+
+        .stick-left {
+            position: sticky;
+            left: 0px;
+        }
+
+        .selectors-container {
+            padding: 2rem 0 2rem 0;
+            user-select: none;
+        }
+
+        .selectors-container th {
+            text-align: left;
+            vertical-align: top;
+            white-space: nowrap;
+            padding-top: 0.5rem;
+            padding-right: 1rem;
+        }
+
+        .selector {
+            display: inline-block;
+            margin-left: 0.1rem;
+            padding: 0.2rem 0.5rem 0.2rem 0.5rem;
+            background: var(--selector-background-color);
+            color: var(--selector-text-color);
+            border: 0.2rem solid var(--background-color);
+            border-radius: 0.5rem;
+        }
+
+        .selector-active {
+            color: var(--selector-active-text-color);
+            background: var(--selector-active-background-color);
+        }
+
+        a, a:visited {
+            text-decoration: none;
+            color: var(--link-color);
+            cursor: pointer;
+        }
+
+        a:hover {
+            color: var(--link-hover-color);
+        }
+
+        .selector:hover {
+            color: var(--selector-hover-text-color) !important;
+            background: var(--selector-background-color);
+        }
+
+        .selector-active:hover {
+            background: var(--selector-hover-background-color);
+        }
+
+        #summary tr:nth-child(odd) {
+            background: var(--summary-every-other-row-color);
+        }
+
+        .summary-name {
+            white-space: nowrap;
+            text-align: right;
+            padding-right: 1rem;
+        }
+
+        .summary-bar-cell {
+            width: 100%;
+        }
+
+        .summary-bar {
+            height: 1rem;
+            background: var(--bar-color);
+            border-radius: 0 0.2rem 0.2rem 0;
+        }
+
+        .summary-number {
+            font-family: monospace;
+            text-align: right;
+            padding-left: 1rem;
+            white-space: nowrap;
+        }
+
+        th {
+            padding-bottom: 0.5rem;
+        }
+
+        .th-entry-hilite {
+            background: var(--highlight-color);
+            font-weight: bold;
+        }
+
+        .summary-row:hover, .summary-row-hilite {
+            background: var(--highlight-color) !important;
+            font-weight: bold;
+        }
+
+        #details {
+            padding-bottom: 1rem;
+        }
+
+        #details th {
+            vertical-align: bottom;
+            white-space: pre;
+        }
+
+        #details td {
+            white-space: pre;
+            font-family: monospace;
+            text-align: right;
+            padding: 0.1rem 0.5rem 0.1rem 0.5rem;
+        }
+
+        .shadow:hover {
+            box-shadow: 0 0 1rem var(--shadow-color);
+            position: relative;
+        }
+
+        #nothing-selected {
+            display: none;
+            font-size: 32pt;
+            font-weight: bold;
+            color: var(--nothing-selected-color);
+        }
+
+        .note {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: calc(100% + 0.5rem);
+            visibility: hidden;
+            background-color: var(--tooltip-background-color);
+            color: var(--tooltip-text-color);
+            box-shadow: 0 0 1rem var(--shadow-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            z-index: 1;
+            text-align: left;
+            white-space: normal;
+        }
+
+        .tooltip-result {
+            left: calc(50% - 0.25rem);
+            width: 20rem;
+            margin-left: -10rem;
+        }
+
+        .tooltip-query {
+            left: 0;
+            width: 40rem;
+            margin-left: -3rem;
+        }
+
+        .note:hover .tooltip {
+            visibility: visible;
+        }
+
+        .tooltip::after {
+            content: " ";
+            position: absolute;
+            top: 100%;
+            border-width: 0.5rem;
+            border-style: solid;
+            border-color: var(--tooltip-background-color) transparent transparent transparent;
+        }
+
+        .tooltip-result::after {
+            left: 50%;
+            margin-left: -1rem;
+        }
+
+        .tooltip-query::after {
+            left: 3rem;
+            margin-left: 0.5rem;
+        }
+
+        .nowrap {
+            text-wrap: none;
+        }
+
+        .themes {
+            float: right;
+            font-size: 200%;
+            cursor: pointer;
+        }
+
+        #toggle-dark, #toggle-light {
+            padding-right: 0.5rem;
+            cursor: pointer;
+        }
+
+        #toggle-dark:hover, #toggle-light:hover {
+            display: inline-block;
+            transform: translate(1px, 1px);
+            filter: brightness(125%);
+        }
+    </style>
+    <script type="text/javascript">
+
+const data = [
+{"system":"ClickHouse","date":"2023-06-28","machine":"720_GB","config":"default","comment":"","tags":["Cloud"],"data_size":991638026556,"result":[[1.509,0.911,1.447],[0.453,0.428,0.405],[1.021,0.491,0.925],[0.543,0.122,0.112],[1.808,1.705,0.596],[0.519,0.091,0.106],[0.966,0.783,0.604],[0.932,0.508,0.492],[1.258,0.586,1.009],[0.677,0.093,0.088],[1.345,1.041,0.503],[0.94,0.236,0.256],[0.795,1.066,0.839],[0.266,0.229,0.266],[0.678,0.62,0.865],[0.076,0.079,0.077],[0.725,0.981,0.444],[0.492,0.07,0.081],[0.787,0.596,0.334],[0.128,0.132,0.133],[0.962,0.442,0.939],[0.508,0.188,0.22],[0.699,0.445,0.812],[0.243,0.497,0.234],[0.575,1.098,0.306],[0.541,0.041,0.045],[0.856,0.768,0.364],[0.065,0.077,0.283],[1.375,1.268,0.299],[0.508,0.048,0.044],[0.518,0.637,0.249],[0.129,0.469,0.148],[1.192,0.374,0.666],[0.186,0.191,0.918],[0.887,0.28,0.285],[0.982,0.22,0.901],[0.739,0.256,0.741],[0.635,0.111,0.103],[0.59,0.718,0.222],[0.729,0.156,0.135],[1.409,0.796,0.31],[0.119,0.127,0.119],[0.658,0.899,0.302],[0.058,0.06,0.055],[0.597,0.498,0.277],[0.383,0.024,0.028],[0.567,0.222,0.916],[0.086,0.117,0.087],[0.744,0.222,0.889],[0.164,0.191,0.177],[0.566,0.767,0.337],[0.154,0.618,0.151],[0.536,0.729,0.267],[0.542,0.045,0.043],[0.441,0.645,0.378],[0.053,0.043,0.048],[0.805,0.201,0.506],[0.568,0.071,0.059],[0.57,0.178,0.39],[0.041,0.038,0.04],[0.629,0.499,0.217],[0.871,0.146,0.154],[0.91,0.566,0.242],[0.201,0.709,0.204],[0.551,0.199,0.462],[0.533,0.146,0.185],[0.486,0.215,0.644],[0.341,0.1,0.094],[0.904,0.974,0.197],[0.07,0.08,0.401],[0.756,0.198,0.466],[0.444,0.068,0.071],[0.664,0.215,0.215],[0.136,0.133,0.875],[0.544,0.184,0.599],[0.689,0.109,0.116],[0.799,0.821,0.523],[0.066,0.079,0.072],[0.741,0.83,0.227],[0.386,0.066,0.087],[0.478,0.224,0.686],[0.065,0.057,0.047],[0.872,0.761,0.171],[0.104,0.109,0.522],[0.496,0.155,0.155],[0.282,0.525,0.076],[0.402,0.755,0.182],[0.71,0.083,0.091],[0.762,0.149,0.441],[0.543,0.109,0.097],[0.598,0.464,0.175],[0.082,0.215,0.091],[0.436,0.368,0.17],[0.482,0.172,0.165],[0.632,0.156,0.151],[0.545,0.111,0.333],[0.43,0.304,0.493],[0.037,0.05,0.046],[0.607,0.569,0.648],[0.055,0.052,0.048],[0.348,0.679,0.504],[0.066,0.067,0.063],[0.667,0.147,0.791],[0.076,0.077,0.261],[0.57,0.139,0.518],[0.135,0.354,0.099],[0.473,0.558,0.542],[0.04,0.047,0.042],[0.608,0.521,0.177],[0.279,0.057,0.048],[0.518,0.613,0.389],[0.129,0.136,0.164],[0.44,0.848,0.182],[0.146,0.129,0.12],[0.923,0.42,0.117],[0.039,0.042,0.516],[0.86,0.63,0.412],[0.028,0.024,0.026],[0.438,0.645,0.54],[0.066,0.059,0.057],[0.343,0.149,0.539],[0.099,0.121,0.103],[0.612,0.141,0.485],[0.379,0.032,0.035],[0.343,0.159,0.163],[0.38,0.282,0.04],[0.571,0.558,0.169],[0.043,0.051,0.051],[0.422,0.471,0.145],[0.028,0.03,0.439],[0.521,0.472,0.406],[0.057,0.06,0.056],[0.548,0.366,0.607],[0.121,0.082,0.08],[0.488,0.814,0.167],[0.062,0.066,0.425],[0.463,0.644,0.771],[0.032,0.039,0.041],[0.692,0.392,0.136],[0.035,0.043,0.046],[0.508,0.132,0.132],[0.488,0.361,0.088],[0.597,0.123,0.146],[0.357,0.286,0.068],[0.689,0.418,0.14],[0.045,0.05,0.045],[0.399,0.14,0.627],[0.028,0.528,0.029],[0.841,0.612,0.442],[0.084,0.078,0.089],[0.516,0.38,0.607],[0.092,0.072,0.077],[0.415,0.508,0.109],[0.081,0.071,0.087],[0.664,0.126,0.328],[0.067,0.062,0.059],[0.521,0.136,0.098],[0.308,0.034,0.313],[0.362,0.136,0.524],[0.46,0.092,0.109],[0.54,0.121,0.399],[0.066,0.244,0.062],[0.538,0.782,0.141],[0.112,0.114,0.664],[0.447,0.484,0.13],[0.406,0.038,0.033],[0.521,0.342,0.132],[0.436,0.076,0.082],[0.49,0.423,0.41],[0.083,0.093,0.103],[0.536,0.134,0.435],[0.09,0.479,0.087],[0.504,0.352,0.127],[0.308,0.056,0.048],[0.429,0.107,0.343],[0.041,0.44,0.047],[0.75,0.144,0.505],[0.056,0.065,0.06],[0.52,0.138,0.563],[0.439,0.112,0.112],[0.496,0.909,0.128],[0.04,0.2,0.034],[0.452,0.121,0.12],[0.369,0.233,0.041],[0.415,0.665,0.549],[0.024,0.026,0.027],[0.548,0.134,0.367],[0.363,0.029,0.027],[0.547,0.12,0.121],[0.389,0.033,0.033],[0.506,0.363,0.134],[0.029,0.032,0.031],[0.55,0.107,0.105],[0.288,0.084,0.082],[0.557,0.409,0.103],[0.07,0.07,0.3],[0.547,0.463,0.136],[0.033,0.355,0.034],[0.732,0.539,0.384],[0.077,0.079,0.074]],"source":"top_file_type_per_project/results/clickhouse_720_GB_default.json"}
+,{"system":"Snowflake","date":"2023-06-28","machine":"2XLARGE","config":"date_project_cluster","comment":"","tags":["Cloud"],"data_size":1467343154176,"result":[[2.704,1.81,1.902],[1.293,1.075,1.228],[1.759,2.062,1.371],[1.192,0.731,0.938],[2.308,1.549,1.977],[1.134,0.531,0.51],[1.731,1.166,1.037],[1.243,1.217,1.195],[2.016,1.155,1.326],[0.552,0.612,0.486],[1.858,1.434,1.312],[1.121,1.156,1.053],[1.465,1.204,0.951],[0.866,1.076,0.911],[1.786,1.133,1.08],[0.685,0.576,0.657],[1.601,1.121,0.984],[0.565,0.489,0.493],[2.254,1.669,1.523],[1.084,0.827,0.952],[1.824,1.033,1.171],[1.313,1.037,0.937],[1.738,1.278,1.305],[1.339,0.853,0.801],[1.997,1.047,0.942],[0.659,0.611,0.492],[1.619,1.351,1.195],[0.707,0.558,0.634],[3.129,2.23,1.859],[0.902,0.65,0.577],[1.669,1.564,0.975],[0.836,0.807,0.904],[1.704,1.146,1.113],[0.89,0.862,0.737],[2.572,1.154,1.074],[0.846,0.908,0.916],[1.707,1.171,1.09],[0.803,0.725,0.76],[1.502,1.189,0.806],[0.825,1.011,0.873],[1.374,1.106,1.008],[0.782,0.818,0.604],[6.137,1.233,1.088],[0.828,0.458,0.596],[1.489,0.835,0.822],[0.336,0.412,0.437],[1.93,1.162,1.241],[0.742,0.595,0.737],[1.981,0.952,0.998],[0.888,0.827,1.212],[1.693,1.039,1.054],[0.805,0.757,0.801],[1.977,1.223,0.831],[0.618,0.481,0.526],[4.834,0.97,0.865],[0.458,0.582,0.424],[2.001,0.858,0.835],[0.574,0.459,0.642],[1.7,0.858,0.848],[0.511,0.41,0.538],[1.587,0.954,0.961],[0.8,0.648,0.906],[1.413,1.029,1.085],[0.893,0.885,0.774],[1.484,0.807,0.952],[0.721,0.864,0.861],[1.529,0.854,0.843],[0.682,0.714,0.629],[1.664,0.9,0.801],[0.706,0.569,0.511],[1.622,0.831,0.868],[0.464,0.594,0.595],[1.6,0.695,0.826],[0.757,0.613,0.883],[1.359,0.854,0.839],[0.732,0.708,0.719],[1.496,1.054,0.843],[0.471,0.683,0.695],[1.658,1.135,1.056],[0.871,0.434,0.57],[2.037,1.889,1.41],[0.998,0.694,0.586],[1.477,0.686,0.795],[0.586,0.789,0.734],[1.487,1.666,1.956],[1.493,0.716,0.604],[1.488,1.152,0.774],[0.506,0.664,0.65],[1.464,0.63,0.727],[0.802,0.707,0.533],[1.47,0.702,0.655],[0.853,0.735,0.706],[1.63,1.054,0.841],[1.055,0.918,0.866],[1.816,0.669,0.831],[0.762,0.755,0.689],[1.815,0.847,0.71],[0.55,0.61,0.553],[1.584,0.718,0.815],[0.522,0.517,0.635],[1.731,1.234,1],[0.849,0.471,0.471],[1.583,0.888,0.823],[0.658,0.664,0.512],[1.391,0.851,0.793],[0.695,0.682,0.743],[2.125,0.614,0.771],[0.442,0.57,0.55],[1.498,0.961,0.81],[0.561,0.681,0.739],[1.402,0.745,0.633],[0.769,0.811,0.784],[1.758,1.224,1.149],[0.625,0.755,0.762],[1.451,0.807,0.786],[0.563,0.499,0.475],[1.402,0.768,0.692],[0.5,0.484,0.384],[2.372,0.84,0.805],[0.701,0.622,0.7],[1.852,0.79,0.857],[0.739,0.613,0.741],[1.682,0.833,0.879],[0.442,0.39,0.379],[0.904,0.803,0.865],[0.487,0.504,0.51],[1.411,0.757,0.639],[0.55,0.408,0.666],[1.866,1.077,0.701],[0.425,0.431,0.517],[1.431,0.744,0.729],[0.505,0.578,0.473],[1.718,1.084,1.06],[0.883,0.706,0.827],[1.519,1.063,0.689],[0.587,0.621,0.543],[1.259,0.855,1.549],[0.515,0.548,0.511],[1.705,0.833,0.837],[0.449,0.556,1.859],[0.627,1.022,0.682],[1.012,0.752,0.548],[1.591,0.679,0.805],[0.6,0.648,0.605],[1.487,0.673,0.725],[0.453,0.43,0.578],[1.494,0.917,0.835],[0.521,0.539,0.648],[1.569,0.821,0.778],[0.525,0.531,0.702],[2.75,2.561,1.692],[0.939,0.749,0.861],[1.942,0.82,0.74],[0.796,0.908,0.898],[1.635,0.571,0.556],[0.62,0.6,0.553],[1.415,0.871,0.842],[0.445,0.601,0.584],[1.352,0.789,0.726],[0.651,0.591,0.704],[2.988,0.78,0.663],[0.625,0.625,0.647],[1.466,0.622,0.73],[0.698,0.652,0.698],[1.579,0.844,0.696],[0.394,0.72,0.508],[0.899,0.857,0.831],[0.723,0.536,0.662],[1.491,0.763,0.669],[0.769,0.708,0.897],[1.84,0.693,0.757],[0.764,0.934,0.655],[1.493,0.778,0.75],[1.179,0.586,0.728],[1.527,1.488,0.73],[0.643,0.608,0.587],[1.582,1.02,0.808],[0.497,1.435,0.605],[1.523,0.685,0.681],[0.746,0.684,0.744],[1.17,0.667,0.846],[3.798,0.552,0.558],[1.667,0.971,0.726],[0.524,0.515,0.546],[1.456,1.134,0.761],[0.457,0.488,0.683],[1.526,1.677,1.517],[0.877,0.679,0.376],[0.88,1.282,0.886],[0.535,0.385,0.485],[1.76,1.546,1.363],[1.243,0.631,0.482],[1.533,0.532,0.661],[0.514,0.861,1.873],[1.417,0.739,0.757],[0.845,0.756,0.717],[1.36,1.511,1.702],[0.503,0.542,0.508],[1.653,0.633,0.594],[0.493,0.555,0.825]],"source":"top_file_type_per_project/results/snowflake_2XLARGE_date_project_cluster.json"}
+]; // end of data
+const queries = [
+"SELECT file.type, count() as c FROM pypi WHERE project = 'boto3' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'boto3' AND date >= '2023-06-23'::Date - toIntervalDay(77) AND date <= '2023-06-23'::Date - toIntervalDay(39) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'urllib3' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'urllib3' AND date >= '2023-06-23'::Date - toIntervalDay(15) AND date <= '2023-06-23'::Date - toIntervalDay(0) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'requests' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'requests' AND date >= '2023-06-23'::Date - toIntervalDay(12) AND date <= '2023-06-23'::Date - toIntervalDay(4) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'botocore' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'botocore' AND date >= '2023-06-23'::Date - toIntervalDay(87) AND date <= '2023-06-23'::Date - toIntervalDay(20) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'charset-normalizer' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'charset-normalizer' AND date >= '2023-06-23'::Date - toIntervalDay(27) AND date <= '2023-06-23'::Date - toIntervalDay(17) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'setuptools' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'setuptools' AND date >= '2023-06-23'::Date - toIntervalDay(58) AND date <= '2023-06-23'::Date - toIntervalDay(19) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'idna' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'idna' AND date >= '2023-06-23'::Date - toIntervalDay(62) AND date <= '2023-06-23'::Date - toIntervalDay(12) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'certifi' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'certifi' AND date >= '2023-06-23'::Date - toIntervalDay(45) AND date <= '2023-06-23'::Date - toIntervalDay(37) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 's3transfer' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 's3transfer' AND date >= '2023-06-23'::Date - toIntervalDay(45) AND date <= '2023-06-23'::Date - toIntervalDay(40) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'python-dateutil' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'python-dateutil' AND date >= '2023-06-23'::Date - toIntervalDay(32) AND date <= '2023-06-23'::Date - toIntervalDay(7) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'awscli' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'awscli' AND date >= '2023-06-23'::Date - toIntervalDay(88) AND date <= '2023-06-23'::Date - toIntervalDay(28) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'typing-extensions' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'typing-extensions' AND date >= '2023-06-23'::Date - toIntervalDay(61) AND date <= '2023-06-23'::Date - toIntervalDay(23) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'six' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'six' AND date >= '2023-06-23'::Date - toIntervalDay(49) AND date <= '2023-06-23'::Date - toIntervalDay(47) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyyaml' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyyaml' AND date >= '2023-06-23'::Date - toIntervalDay(50) AND date <= '2023-06-23'::Date - toIntervalDay(42) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'google-api-core' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'google-api-core' AND date >= '2023-06-23'::Date - toIntervalDay(85) AND date <= '2023-06-23'::Date - toIntervalDay(82) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'wheel' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'wheel' AND date >= '2023-06-23'::Date - toIntervalDay(78) AND date <= '2023-06-23'::Date - toIntervalDay(39) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'cryptography' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'cryptography' AND date >= '2023-06-23'::Date - toIntervalDay(58) AND date <= '2023-06-23'::Date - toIntervalDay(12) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'packaging' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'packaging' AND date >= '2023-06-23'::Date - toIntervalDay(78) AND date <= '2023-06-23'::Date - toIntervalDay(23) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'numpy' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'numpy' AND date >= '2023-06-23'::Date - toIntervalDay(34) AND date <= '2023-06-23'::Date - toIntervalDay(7) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pip' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pip' AND date >= '2023-06-23'::Date - toIntervalDay(64) AND date <= '2023-06-23'::Date - toIntervalDay(23) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'jmespath' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'jmespath' AND date >= '2023-06-23'::Date - toIntervalDay(71) AND date <= '2023-06-23'::Date - toIntervalDay(47) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'importlib-metadata' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'importlib-metadata' AND date >= '2023-06-23'::Date - toIntervalDay(67) AND date <= '2023-06-23'::Date - toIntervalDay(62) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'zipp' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'zipp' AND date >= '2023-06-23'::Date - toIntervalDay(1) AND date <= '2023-06-23'::Date - toIntervalDay(0) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'click' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'click' AND date >= '2023-06-23'::Date - toIntervalDay(40) AND date <= '2023-06-23'::Date - toIntervalDay(14) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyasn1' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyasn1' AND date >= '2023-06-23'::Date - toIntervalDay(58) AND date <= '2023-06-23'::Date - toIntervalDay(3) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'colorama' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'colorama' AND date >= '2023-06-23'::Date - toIntervalDay(49) AND date <= '2023-06-23'::Date - toIntervalDay(13) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'protobuf' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'protobuf' AND date >= '2023-06-23'::Date - toIntervalDay(34) AND date <= '2023-06-23'::Date - toIntervalDay(31) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'rsa' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'rsa' AND date >= '2023-06-23'::Date - toIntervalDay(23) AND date <= '2023-06-23'::Date - toIntervalDay(17) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'attrs' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'attrs' AND date >= '2023-06-23'::Date - toIntervalDay(63) AND date <= '2023-06-23'::Date - toIntervalDay(50) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pytz' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pytz' AND date >= '2023-06-23'::Date - toIntervalDay(60) AND date <= '2023-06-23'::Date - toIntervalDay(55) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pandas' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pandas' AND date >= '2023-06-23'::Date - toIntervalDay(66) AND date <= '2023-06-23'::Date - toIntervalDay(18) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'markupsafe' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'markupsafe' AND date >= '2023-06-23'::Date - toIntervalDay(74) AND date <= '2023-06-23'::Date - toIntervalDay(24) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'jinja2' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'jinja2' AND date >= '2023-06-23'::Date - toIntervalDay(60) AND date <= '2023-06-23'::Date - toIntervalDay(14) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'cffi' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'cffi' AND date >= '2023-06-23'::Date - toIntervalDay(66) AND date <= '2023-06-23'::Date - toIntervalDay(35) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyjwt' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyjwt' AND date >= '2023-06-23'::Date - toIntervalDay(48) AND date <= '2023-06-23'::Date - toIntervalDay(28) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pycparser' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pycparser' AND date >= '2023-06-23'::Date - toIntervalDay(62) AND date <= '2023-06-23'::Date - toIntervalDay(48) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'aiobotocore' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'aiobotocore' AND date >= '2023-06-23'::Date - toIntervalDay(64) AND date <= '2023-06-23'::Date - toIntervalDay(13) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 's3fs' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 's3fs' AND date >= '2023-06-23'::Date - toIntervalDay(76) AND date <= '2023-06-23'::Date - toIntervalDay(41) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'fsspec' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'fsspec' AND date >= '2023-06-23'::Date - toIntervalDay(31) AND date <= '2023-06-23'::Date - toIntervalDay(15) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'grpcio-status' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'grpcio-status' AND date >= '2023-06-23'::Date - toIntervalDay(84) AND date <= '2023-06-23'::Date - toIntervalDay(66) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'googleapis-common-protos' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'googleapis-common-protos' AND date >= '2023-06-23'::Date - toIntervalDay(20) AND date <= '2023-06-23'::Date - toIntervalDay(12) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'docutils' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'docutils' AND date >= '2023-06-23'::Date - toIntervalDay(59) AND date <= '2023-06-23'::Date - toIntervalDay(13) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'google-auth' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'google-auth' AND date >= '2023-06-23'::Date - toIntervalDay(45) AND date <= '2023-06-23'::Date - toIntervalDay(27) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'oauthlib' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'oauthlib' AND date >= '2023-06-23'::Date - toIntervalDay(63) AND date <= '2023-06-23'::Date - toIntervalDay(37) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'tomli' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'tomli' AND date >= '2023-06-23'::Date - toIntervalDay(41) AND date <= '2023-06-23'::Date - toIntervalDay(2) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'wrapt' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'wrapt' AND date >= '2023-06-23'::Date - toIntervalDay(32) AND date <= '2023-06-23'::Date - toIntervalDay(6) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'cachetools' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'cachetools' AND date >= '2023-06-23'::Date - toIntervalDay(87) AND date <= '2023-06-23'::Date - toIntervalDay(10) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyparsing' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyparsing' AND date >= '2023-06-23'::Date - toIntervalDay(82) AND date <= '2023-06-23'::Date - toIntervalDay(27) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'werkzeug' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'werkzeug' AND date >= '2023-06-23'::Date - toIntervalDay(71) AND date <= '2023-06-23'::Date - toIntervalDay(63) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'sqlalchemy' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'sqlalchemy' AND date >= '2023-06-23'::Date - toIntervalDay(77) AND date <= '2023-06-23'::Date - toIntervalDay(69) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'requests-oauthlib' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'requests-oauthlib' AND date >= '2023-06-23'::Date - toIntervalDay(41) AND date <= '2023-06-23'::Date - toIntervalDay(26) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'multidict' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'multidict' AND date >= '2023-06-23'::Date - toIntervalDay(59) AND date <= '2023-06-23'::Date - toIntervalDay(34) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'yarl' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'yarl' AND date >= '2023-06-23'::Date - toIntervalDay(88) AND date <= '2023-06-23'::Date - toIntervalDay(30) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyarrow' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyarrow' AND date >= '2023-06-23'::Date - toIntervalDay(30) AND date <= '2023-06-23'::Date - toIntervalDay(22) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'jsonschema' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'jsonschema' AND date >= '2023-06-23'::Date - toIntervalDay(14) AND date <= '2023-06-23'::Date - toIntervalDay(2) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'platformdirs' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'platformdirs' AND date >= '2023-06-23'::Date - toIntervalDay(68) AND date <= '2023-06-23'::Date - toIntervalDay(4) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'async-timeout' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'async-timeout' AND date >= '2023-06-23'::Date - toIntervalDay(87) AND date <= '2023-06-23'::Date - toIntervalDay(39) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'aiohttp' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'aiohttp' AND date >= '2023-06-23'::Date - toIntervalDay(69) AND date <= '2023-06-23'::Date - toIntervalDay(59) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'isodate' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'isodate' AND date >= '2023-06-23'::Date - toIntervalDay(2) AND date <= '2023-06-23'::Date - toIntervalDay(1) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'psutil' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'psutil' AND date >= '2023-06-23'::Date - toIntervalDay(89) AND date <= '2023-06-23'::Date - toIntervalDay(73) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pydantic' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pydantic' AND date >= '2023-06-23'::Date - toIntervalDay(77) AND date <= '2023-06-23'::Date - toIntervalDay(19) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'decorator' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'decorator' AND date >= '2023-06-23'::Date - toIntervalDay(7) AND date <= '2023-06-23'::Date - toIntervalDay(6) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyasn1-modules' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyasn1-modules' AND date >= '2023-06-23'::Date - toIntervalDay(30) AND date <= '2023-06-23'::Date - toIntervalDay(28) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'soupsieve' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'soupsieve' AND date >= '2023-06-23'::Date - toIntervalDay(16) AND date <= '2023-06-23'::Date - toIntervalDay(8) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'flask' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'flask' AND date >= '2023-06-23'::Date - toIntervalDay(1) AND date <= '2023-06-23'::Date - toIntervalDay(0) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pluggy' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pluggy' AND date >= '2023-06-23'::Date - toIntervalDay(45) AND date <= '2023-06-23'::Date - toIntervalDay(28) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pytest' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pytest' AND date >= '2023-06-23'::Date - toIntervalDay(52) AND date <= '2023-06-23'::Date - toIntervalDay(10) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'beautifulsoup4' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'beautifulsoup4' AND date >= '2023-06-23'::Date - toIntervalDay(40) AND date <= '2023-06-23'::Date - toIntervalDay(19) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'lxml' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'lxml' AND date >= '2023-06-23'::Date - toIntervalDay(6) AND date <= '2023-06-23'::Date - toIntervalDay(2) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'filelock' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'filelock' AND date >= '2023-06-23'::Date - toIntervalDay(26) AND date <= '2023-06-23'::Date - toIntervalDay(19) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'grpcio' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'grpcio' AND date >= '2023-06-23'::Date - toIntervalDay(86) AND date <= '2023-06-23'::Date - toIntervalDay(36) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'greenlet' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'greenlet' AND date >= '2023-06-23'::Date - toIntervalDay(40) AND date <= '2023-06-23'::Date - toIntervalDay(14) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'frozenlist' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'frozenlist' AND date >= '2023-06-23'::Date - toIntervalDay(16) AND date <= '2023-06-23'::Date - toIntervalDay(4) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'coverage' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'coverage' AND date >= '2023-06-23'::Date - toIntervalDay(16) AND date <= '2023-06-23'::Date - toIntervalDay(14) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'aiosignal' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'aiosignal' AND date >= '2023-06-23'::Date - toIntervalDay(48) AND date <= '2023-06-23'::Date - toIntervalDay(5) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'azure-core' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'azure-core' AND date >= '2023-06-23'::Date - toIntervalDay(27) AND date <= '2023-06-23'::Date - toIntervalDay(2) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'scipy' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'scipy' AND date >= '2023-06-23'::Date - toIntervalDay(63) AND date <= '2023-06-23'::Date - toIntervalDay(22) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pillow' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pillow' AND date >= '2023-06-23'::Date - toIntervalDay(66) AND date <= '2023-06-23'::Date - toIntervalDay(45) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'tqdm' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'tqdm' AND date >= '2023-06-23'::Date - toIntervalDay(14) AND date <= '2023-06-23'::Date - toIntervalDay(4) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyrsistent' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyrsistent' AND date >= '2023-06-23'::Date - toIntervalDay(78) AND date <= '2023-06-23'::Date - toIntervalDay(37) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'virtualenv' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'virtualenv' AND date >= '2023-06-23'::Date - toIntervalDay(29) AND date <= '2023-06-23'::Date - toIntervalDay(4) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'et-xmlfile' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'et-xmlfile' AND date >= '2023-06-23'::Date - toIntervalDay(60) AND date <= '2023-06-23'::Date - toIntervalDay(8) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'openpyxl' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'openpyxl' AND date >= '2023-06-23'::Date - toIntervalDay(5) AND date <= '2023-06-23'::Date - toIntervalDay(0) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'importlib-resources' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'importlib-resources' AND date >= '2023-06-23'::Date - toIntervalDay(38) AND date <= '2023-06-23'::Date - toIntervalDay(8) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyopenssl' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pyopenssl' AND date >= '2023-06-23'::Date - toIntervalDay(77) AND date <= '2023-06-23'::Date - toIntervalDay(30) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'iniconfig' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'iniconfig' AND date >= '2023-06-23'::Date - toIntervalDay(82) AND date <= '2023-06-23'::Date - toIntervalDay(25) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pygments' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pygments' AND date >= '2023-06-23'::Date - toIntervalDay(20) AND date <= '2023-06-23'::Date - toIntervalDay(8) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'chardet' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'chardet' AND date >= '2023-06-23'::Date - toIntervalDay(27) AND date <= '2023-06-23'::Date - toIntervalDay(13) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'asn1crypto' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'asn1crypto' AND date >= '2023-06-23'::Date - toIntervalDay(67) AND date <= '2023-06-23'::Date - toIntervalDay(44) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'itsdangerous' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'itsdangerous' AND date >= '2023-06-23'::Date - toIntervalDay(85) AND date <= '2023-06-23'::Date - toIntervalDay(14) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'exceptiongroup' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'exceptiongroup' AND date >= '2023-06-23'::Date - toIntervalDay(66) AND date <= '2023-06-23'::Date - toIntervalDay(62) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'websocket-client' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'websocket-client' AND date >= '2023-06-23'::Date - toIntervalDay(80) AND date <= '2023-06-23'::Date - toIntervalDay(72) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'tabulate' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'tabulate' AND date >= '2023-06-23'::Date - toIntervalDay(12) AND date <= '2023-06-23'::Date - toIntervalDay(11) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'google-api-python-client' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'google-api-python-client' AND date >= '2023-06-23'::Date - toIntervalDay(70) AND date <= '2023-06-23'::Date - toIntervalDay(69) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'requests-toolbelt' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'requests-toolbelt' AND date >= '2023-06-23'::Date - toIntervalDay(10) AND date <= '2023-06-23'::Date - toIntervalDay(5) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'google-cloud-core' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'google-cloud-core' AND date >= '2023-06-23'::Date - toIntervalDay(2) AND date <= '2023-06-23'::Date - toIntervalDay(0) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'mypy-extensions' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'mypy-extensions' AND date >= '2023-06-23'::Date - toIntervalDay(69) AND date <= '2023-06-23'::Date - toIntervalDay(15) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pynacl' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'pynacl' AND date >= '2023-06-23'::Date - toIntervalDay(76) AND date <= '2023-06-23'::Date - toIntervalDay(27) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'google-cloud-storage' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'google-cloud-storage' AND date >= '2023-06-23'::Date - toIntervalDay(42) AND date <= '2023-06-23'::Date - toIntervalDay(40) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'psycopg2-binary' AND (date >= '2023-06-23'::Date - toIntervalDay(90)) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+,"SELECT file.type, count() as c FROM pypi WHERE project = 'psycopg2-binary' AND date >= '2023-06-23'::Date - toIntervalDay(70) AND date <= '2023-06-23'::Date - toIntervalDay(26) GROUP BY file.type ORDER BY c DESC LIMIT 10;"
+]; // end of queries
+
+    </script>
+</head>
+<body>
+
+<div class="header stick-left">
+    <span class="nowrap themes"><span id="toggle-dark">🌚</span><span id="toggle-light">🌞</span></span>
+    <h1>ClickHouse vs Snowflake - Top file types per project</h1>
+    <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Methodology</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Reproduce and Validate the Results</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Add a System</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Report Mistake</a>
+</div>
+
+<table class="selectors-container stick-left">
+    <tr>
+        <th>System: </th>
+        <td id="selectors_system">
+            <a id="select-all-systems" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Type: </th>
+        <td id="selectors_type">
+            <a id="select-all-types" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Machine: </th>
+        <td id="selectors_machine">
+            <a id="select-all-machines" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Configuration: </th>
+        <td id="selectors_config">
+            <a id="select-all-configs" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Metric: </th>
+        <td id="selectors_run">
+            <a class="selector" id="selector-metric-cold">Cold Run</a>
+            <a class="selector" id="selector-metric-hot">Hot Run</a>
+            <a class="selector" id="selector-metric-size">Storage Size</a>
+        </td>
+    </tr>
+</table>
+
+<table class="stick-left comparison">
+    <thead>
+        <tr>
+            <th class="summary-name">
+                System &amp; Machine
+            </th>
+            <th colspan="2">
+                Relative <span id="time-or-size">time</span> (lower is better)
+            </th>
+        </tr>
+    </thead>
+    <tbody id="summary">
+    </tbody>
+</table>
+
+<div id="nothing-selected" class="stick-left">Nothing selected</div>
+
+<div class="stick-left comparison">
+    <h2>Detailed Comparison</h2>
+</div>
+
+<table id="details">
+    <thead>
+        <tr id="details_head">
+        </tr>
+    </thead>
+    <tbody id="details_body">
+    </tbody>
+</table>
+
+<script type="text/javascript">
+
+const constant_time_add = 0.01;
+const missing_result_penalty = 2;
+const missing_result_time = 300;
+
+let selectors = {
+    "system": {},
+    "type": {},
+    "machine": {},
+    "config": {},
+    "metric": "hot",
+    "queries": [],
+};
+
+let theme = 'light';
+
+function setTheme(new_theme) {
+    theme = new_theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    window.localStorage.setItem('theme', theme);
+    render();
+}
+
+document.getElementById('toggle-light').addEventListener('click', e => setTheme('light'));
+document.getElementById('toggle-dark').addEventListener('click', e => setTheme('dark'));
+
+let new_theme = window.localStorage.getItem('theme');
+if (new_theme && new_theme != theme) {
+    setTheme(new_theme);
+}
+
+/// Generate selectors
+
+let systems = document.getElementById('selectors_system');
+let types = document.getElementById('selectors_type');
+let machines = document.getElementById('selectors_machine');
+let configs = document.getElementById('selectors_config');
+
+let unique_systems = [... new Set(data.map(elem => elem.system))];
+
+function toggle(e, elem, selectors_map) {
+    selectors_map[elem] = !selectors_map[elem];
+    e.target.className = selectors_map[elem] ? 'selector selector-active' : 'selector';
+    render();
+    updateHistory();
+}
+
+function toggleAll(e, selectors_map) {
+    const new_value = Object.keys(selectors_map).filter(k => selectors_map[k]).length * 2 < Object.keys(selectors_map).length;
+    [...e.target.parentElement.querySelectorAll('a')].map(
+        elem => { elem.className = new_value ? 'selector selector-active' : 'selector' });
+
+    Object.keys(selectors_map).map(k => { selectors_map[k] = new_value });
+    render();
+    updateHistory();
+}
+
+unique_systems.map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    systems.appendChild(selector);
+    if (!(elem in selectors.system)) { selectors.system[elem] = data.some(entry => entry.system == elem && !entry.hide); }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.system));
+
+    /// Highlighting summary rows and table columns on hovering over the system selector.
+    selector.addEventListener('mouseover', e => {
+        [...document.querySelectorAll('.summary-row')].map(row => {
+            row.className = row.dataset.system == elem ? 'summary-row summary-row-hilite' : 'summary-row' });
+        [...document.querySelectorAll('.th-entry')].map(th => {
+            th.className = th.dataset.system == elem ? 'th-entry th-entry-hilite' : 'th-entry' });
+    });
+    selector.addEventListener('mouseout', e => {
+        [...document.querySelectorAll('.summary-row')].map(row => { row.className = 'summary-row' });
+        [...document.querySelectorAll('.th-entry')].map(row => { row.className = 'th-entry' });
+    });
+});
+
+[... new Set(data.map(elem => elem.tags).flat())].map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    types.appendChild(selector);
+    if (!(elem in selectors.type)) { selectors.type[elem] = true; }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.type));
+});
+
+[... new Set(data.map(elem => elem.machine))].map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    machines.appendChild(selector);
+    if (!(elem in selectors.machine)) { selectors.machine[elem] = true; }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.machine));
+});
+
+[... new Set(data.map(elem => elem.config))].sort(
+    (a, b) => ((typeof(b) === 'number') - (typeof(a) === 'number')) || (a - b)).map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    configs.appendChild(selector);
+    if (!(elem in selectors.config)) { selectors.config[elem] = true; }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.config));
+});
+
+document.getElementById('select-all-systems').addEventListener('click', e => toggleAll(e, selectors.system));
+document.getElementById('select-all-types').addEventListener('click', e => toggleAll(e, selectors.type));
+document.getElementById('select-all-machines').addEventListener('click', e => toggleAll(e, selectors.machine));
+document.getElementById('select-all-configs').addEventListener('click', e => toggleAll(e, selectors.config));
+
+[...document.getElementById('selectors_run').querySelectorAll('a')].map(elem => elem.addEventListener('click', e => {
+    [...e.target.parentElement.querySelectorAll('a')].map(elem => { elem.className = elem == e.target ? 'selector selector-active' : 'selector' });
+}));
+
+document.getElementById('selector-metric-cold').addEventListener('click', e => { selectors.metric = 'cold'; render(); updateHistory(); });
+document.getElementById('selector-metric-hot').addEventListener('click', e => { selectors.metric = 'hot'; render(); updateHistory(); });
+document.getElementById('selector-metric-size').addEventListener('click', e => { selectors.metric = 'size'; render(); updateHistory(); });
+
+selectors.queries = [...data[0].result.keys()].map(k => true);
+
+function updateSelectors() {
+    [...systems.childNodes].map(elem => { elem.className = selectors.system[elem.innerText] ? 'selector selector-active' : 'selector' });
+    [...types.childNodes].map(elem => { elem.className = selectors.type[elem.innerText] ? 'selector selector-active' : 'selector' });
+    [...machines.childNodes].map(elem => { elem.className = selectors.machine[elem.innerText] ? 'selector selector-active' : 'selector' });
+    [...configs.childNodes].map(elem => { elem.className = selectors.config[elem.innerText] ? 'selector selector-active' : 'selector' });
+
+    [...document.getElementById('selectors_run').querySelectorAll('a')].map(elem => {
+        elem.className = elem.id == 'selector-metric-' + selectors.metric ? 'selector selector-active' : 'selector' });
+
+    [...document.querySelectorAll('.query-checkbox')].map((elem, i) => { elem.checked = selectors.queries[i] });
+}
+
+function clearElement(elem)
+{
+    while (elem.firstChild) {
+        elem.removeChild(elem.lastChild);
+    }
+}
+
+function selectRun(timings) {
+    return selectors.metric == 'cold' ? timings[0] : (timings.some(timing => timing !== null) ? Math.min(...timings.slice(1).filter(timing => timing !== null)) : null)
+}
+
+function addNote(text) {
+    let note = document.createElement('sup');
+    note.className = 'note';
+    note.appendChild(document.createTextNode('†'));
+
+    let tooltip = document.createElement('span');
+    tooltip.className = 'tooltip tooltip-result';
+    tooltip.appendChild(document.createTextNode(text));
+
+    note.appendChild(tooltip);
+    return note;
+}
+
+function renderSummary(filtered_data) {
+    let table = document.getElementById('summary');
+    clearElement(table);
+
+    /// Generate summary
+
+    /// The algorithm: for each of the queries,
+    /// - if there is a result - take query duration, add 10 ms, and divide it to the corresponding value from the baseline,
+    /// - if there is no result - take the worse query duration across all query runs for this system and multiply by 2.
+    /// Take geometric mean across the queries.
+
+    let summary = {};
+
+    const num_queries = filtered_data[0].result.length;
+
+    const baseline_data = [...filtered_data[0].result.keys()].map(query_num =>
+        [...Array(5).keys()].map(run_num =>
+            Math.min(...filtered_data.filter(elem => !elem.fake).map(elem => elem.result[query_num][run_num]).filter(x => x))));
+
+    const min_data_size = Math.min(...filtered_data.map(elem => elem.data_size).filter(x => x));
+
+    let summaries;
+    if (selectors.metric == 'size') {
+        summaries = filtered_data.map(elem => elem.data_size / min_data_size);
+        document.getElementById('time-or-size').innerText = 'size';
+    } else {
+        summaries = filtered_data.map(elem => {
+            const fallback_timing = missing_result_penalty * Math.max(missing_result_time, ...elem.result.map(timings => selectRun(timings)));
+
+            let accumulator = 0;
+            let used_queries = 0;
+
+            const no_queries_selected = selectors.queries.filter(x => x).length == 0;
+
+            for (let i = 0; i < num_queries; ++i) {
+                if (no_queries_selected || selectors.queries[i]) {
+                    const curr_timing = selectRun(elem.result[i]) ?? fallback_timing;
+                    const baseline_timing = selectRun(baseline_data[i]);
+                    const ratio = (constant_time_add + curr_timing) / (constant_time_add + baseline_timing);
+                    accumulator += Math.log(ratio);
+                    ++used_queries;
+                }
+            }
+
+            return Math.exp(accumulator / used_queries);
+        });
+        document.getElementById('time-or-size').innerText = 'time';
+    }
+
+    const sorted_indices = [...summaries.keys()].sort((a, b) => summaries[a] - summaries[b]);
+    const max_ratio = summaries[sorted_indices[sorted_indices.length - 1]];
+
+    sorted_indices.map(idx => {
+        const elem = filtered_data[idx];
+
+        if (selectors.metric == 'size' && elem.data_size === null) { return; }
+
+        let tr = document.createElement('tr');
+        tr.className = 'summary-row';
+
+        tr.dataset.system = elem.system;
+
+        let td_name = document.createElement('td');
+        td_name.className = 'summary-name';
+
+        if (!elem.fake) {
+            let link = document.createElement('a');
+            link.appendChild(document.createTextNode(`${elem.system} (${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine} - ${elem.config})`));
+            link.href = "https://github.com/ClickHouse/clickhouse_vs_snowflake/blob/main/" + elem.source;
+            td_name.appendChild(link);
+        } else {
+            td_name.appendChild(document.createTextNode(elem.system));
+        }
+
+        if (elem.comment) { td_name.appendChild(addNote(elem.comment)); }
+        td_name.appendChild(document.createTextNode(': '));
+
+        const ratio = summaries[idx];
+        const percentage = summaries[idx] / max_ratio * 100;
+
+        let td_number = document.createElement('td');
+        td_number.className = 'summary-number';
+
+        const text = selectors.metric == 'size' ? `${(elem.data_size / 1024 / 1024 / 1024).toFixed(2)} GiB (×${ratio.toFixed(2)})`
+            : `×${ratio.toFixed(2)}`;
+
+        td_number.appendChild(document.createTextNode(text));
+
+        let td_bar = document.createElement('td');
+        td_bar.className = 'summary-bar-cell';
+
+        let bar = document.createElement('div');
+
+        bar.className = `summary-bar`;
+        bar.style.width = `${percentage}%`;
+
+        td_bar.appendChild(bar);
+
+        tr.appendChild(td_name);
+        tr.appendChild(td_bar);
+        tr.appendChild(td_number);
+        table.appendChild(tr);
+    });
+
+    return [sorted_indices, baseline_data];
+}
+
+function colorize(elem, ratio) {
+    let [r, g, b] = [0, 0, 0];
+
+    /// ratio less than 1 - green
+    /// ratio from 1 to 2 - green to yellow
+    /// ratio from 2 to 10 - yellow to red
+    /// ratio from 10 to 1000 to infinity - red to brown to black
+
+    /// Note: we are using RGB space without proper gamma correction. Read more: https://www.handprint.com/HP/WCL/color1.html
+
+    if (ratio !== null) {
+        if (ratio < 1) {
+            r = 232;
+            g = 255;
+            b = 232;
+        } else if (ratio <= 1) {
+            g = 255;
+        } else if (ratio <= 2) {
+            g = 255;
+            r = (ratio - 1) * 255;
+        } else if (ratio <= 10) {
+            g = (10 - ratio) / 8 * 255;
+            r = 255;
+        } else {
+            r = (1 - ((ratio - 10) / ((ratio - 10) + 1000))) * 255;
+        }
+    }
+
+    if (document.documentElement.getAttribute('data-theme') == 'dark') {
+        r /= 1.5;
+        g /= 1.5;
+        b /= 1.5;
+    }
+
+    elem.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+    if (ratio === null || ratio > 10) {
+        /// This will look better on dark backgrounds
+        elem.style.color = 'white';
+    } else {
+        elem.style.color = 'black';
+    }
+
+    /// The best result is highlighted
+    if (ratio == 1) {
+        elem.style.fontWeight = 'bold';
+    }
+}
+
+function render() {
+    let details_head = document.getElementById('details_head');
+    let details_body = document.getElementById('details_body');
+
+    clearElement(details_head);
+    clearElement(details_body);
+
+    let filtered_data = data.filter(elem =>
+        selectors.system[elem.system] &&
+        selectors.machine[elem.machine] &&
+        selectors.config[elem.config] &&
+        elem.tags.filter(type => selectors.type[type]).length > 0);
+
+    let nothing_selected_elem = document.getElementById('nothing-selected');
+    if (filtered_data.length == 0) {
+        nothing_selected_elem.style.display = 'block';
+        [...document.querySelectorAll('.comparison')].map(e => e.style.display = 'none');
+        return;
+    }
+    nothing_selected_elem.style.display = 'none';
+    [...document.querySelectorAll('.comparison')].map(e => e.style.display = 'block');
+
+    if (selectors.metric == 'size') {
+        filtered_data = [...filtered_data];
+    }
+
+    let [sorted_indices, baseline_data] = renderSummary(filtered_data);
+    sorted_indices = sorted_indices.filter(idx => !filtered_data[idx].fake);
+
+    /// Generate details
+
+    /// Global checkbox
+    {
+        let th_checkbox = document.createElement('th');
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        checkbox.addEventListener('change', e => {
+            [...document.querySelectorAll('.query-checkbox')].map(elem => { elem.checked = e.target.checked });
+            selectors.queries.map((_, i) => { selectors.queries[i] = e.target.checked });
+            renderSummary(filtered_data);
+            updateHistory();
+        });
+        th_checkbox.appendChild(checkbox);
+        details_head.appendChild(th_checkbox);
+        details_head.appendChild(document.createElement('th'));
+    }
+
+    /// Table header
+    sorted_indices.map(idx => {
+        const elem = filtered_data[idx];
+        let th = document.createElement('th');
+        th.appendChild(document.createTextNode(`${elem.system}\n(${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine} - \n ${elem.config})`));
+        th.className = 'th-entry';
+        th.dataset.system = elem.system;
+        details_head.appendChild(th);
+    });
+
+
+
+    /// Data sizes
+    {
+        let tr = document.createElement('tr');
+        tr.className = 'shadow';
+
+        let td_title = document.createElement('td');
+        td_title.colSpan = 2;
+        td_title.appendChild(document.createTextNode('Data size: '));
+        tr.appendChild(td_title);
+
+        sorted_indices.map(idx => {
+            const curr_size = filtered_data[idx].data_size;
+            const baseline_size = Math.min(...filtered_data.map(elem => elem.data_size).filter(x => x));
+            const ratio = curr_size !== null ? curr_size / baseline_size : null;
+
+            let td = document.createElement('td');
+            td.appendChild(document.createTextNode(curr_size !== null ? `${(curr_size / 1024 / 1024 / 1024).toFixed(2)} GiB (×${ratio.toFixed(2)})` : '☠'));
+
+            colorize(td, ratio);
+            tr.appendChild(td);
+        });
+
+        details_body.appendChild(tr);
+    }
+
+    /// Query runtimes
+    const num_queries = filtered_data[0].result.length;
+
+    for (let query_num = 0; query_num < num_queries; ++query_num) {
+        let tr = document.createElement('tr');
+        tr.className = 'shadow';
+
+        let td_checkbox = document.createElement('td');
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'query-checkbox';
+        checkbox.checked = selectors.queries[query_num];
+        checkbox.addEventListener('change', e => {
+            selectors.queries[query_num] = e.target.checked;
+            renderSummary(filtered_data);
+            updateHistory();
+        });
+        td_checkbox.appendChild(checkbox);
+        tr.appendChild(td_checkbox);
+
+        let td_query_num = document.createElement('td');
+        td_query_num.className = 'note';
+        td_query_num.appendChild(document.createTextNode(`Q${query_num}. `));
+
+        let tooltip = document.createElement('span');
+        tooltip.className = 'tooltip tooltip-query';
+        tooltip.appendChild(document.createTextNode(`Query ${query_num}: ${queries[query_num]}`));
+        td_query_num.appendChild(tooltip);
+
+        tr.appendChild(td_query_num);
+
+        sorted_indices.map(idx => {
+            const curr_timing = selectRun(filtered_data[idx].result[query_num]);
+            const baseline_timing = selectRun(baseline_data[query_num]);
+            const ratio = curr_timing !== null ? (constant_time_add + curr_timing) / (constant_time_add + baseline_timing) : null;
+
+            let td = document.createElement('td');
+            td.appendChild(document.createTextNode(curr_timing !== null ? `${curr_timing.toFixed(2)}s (×${ratio.toFixed(2)})` : '☠'));
+
+            colorize(td, ratio);
+            tr.appendChild(td);
+        });
+
+        details_body.appendChild(tr);
+    }
+}
+
+function updateHistory() {
+    history.pushState(selectors, '',
+        window.location.pathname + (window.location.search || '') + '#' + btoa(JSON.stringify(selectors)));
+}
+
+window.onpopstate = function(event) {
+    if (!event.state) { return; }
+    selectors = event.state;
+    render();
+    updateSelectors();
+};
+
+if (window.location.hash) {
+    try {
+        selectors = JSON.parse(atob(window.location.hash.substring(1)));
+    } catch {}
+}
+
+render();
+updateSelectors();
+
+</script>
+</body>
+</html>

@@ -104,11 +104,11 @@ ORDER BY period,
 
 All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT = false;` unless stated. ClickHouse query cache is also disabled and file system cache dropped first.
 
-|      Test Config      |                                                                         ClickHouse                                                                        |                                       Snowflake                                       |
+|      Test Config      |                                                                        ClickHouse                                                                         |                                       Snowflake                                       |
 |:---------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
 |         default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
-|  date_project_cluster |                                                                             NA                                                                            | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
-| prj_cnt_by_prj_system |                                                            Projection for speeding up the subquery                                                        |                                           TODO                                        |
+|  date_project_cluster |                                                                            NA                                                                             | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
+| prj_cnt_by_prj_system |                                       Projection for speeding up the subquery (see [below](#prj_cnt_by_prj_system))                                       |                                           TODO                                        |
 
 
 ## Optimizations
@@ -121,10 +121,8 @@ Projection for speeding up the subquery.
 
 
 ```sql
-CREATE TABLE pypi_test1 AS pypi;
-INSERT INTO pypi_test1 SELECT * FROM pypi LIMIT 1_000_000;
 
-ALTER TABLE pypi_test1
+ALTER TABLE pypi
     ADD PROJECTION prj_count_by_project_system
     (
         SELECT
@@ -134,7 +132,7 @@ ALTER TABLE pypi_test1
         GROUP BY project, my_name
     );
 
-ALTER TABLE pypi_test1
+ALTER TABLE pypi
     MATERIALIZE PROJECTION prj_count_by_project_system SETTINGS mutations_sync = 1;
 
 EXPLAIN indexes=1
@@ -142,13 +140,13 @@ SELECT
     date as day,
     system.name as system,
     count () AS count
-FROM pypi_test1
+FROM pypi
 WHERE (project = 'boto3')
   AND (date >= '2023-06-23'::DateTime - toIntervalDay(90))
   AND system IN (
 ------------------------------------------
     SELECT
-        system.1 as system -- important to use .1 instead of .name - otherwise projection is not used
+        system.1 as system -- important to use .1 instead of .name - otherwise projection is not used (known issue)
     FROM pypi_test1
     WHERE system != ''
       AND project = 'boto3'
