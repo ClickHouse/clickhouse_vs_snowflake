@@ -1,4 +1,3 @@
-
 # Downloads Per Day
 
 - Aims to test rendering and filtering of a line chart showing downloads for a project over time.

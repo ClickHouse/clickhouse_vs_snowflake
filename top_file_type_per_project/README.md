@@ -1,4 +1,4 @@
-# Downloads per day by System
+# Top file types by project
 
 - Aims to test rendering and filtering of a pie-chart showing file types for a project.
 - This test aggregates file types for the last 90 days for a specific project. 
@@ -11,13 +11,48 @@
 ## ClickHouse
 
 ```sql
+-- top file types for a specific project last 90 days
+SELECT
+    file.type,
+    count() AS c
+FROM pypi
+WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90)))
+GROUP BY file.type
+ORDER BY c DESC
+LIMIT 10
 
+-- above query but filtered
+SELECT
+    file.type,
+    count() AS c
+FROM pypi
+WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(77))) AND (date <= (CAST('2023-06-23', 'Date') - toIntervalDay(39)))
+GROUP BY file.type
+ORDER BY c DESC
+LIMIT 10
 ```
 
 ## Snowflake
 
 ```sql
+-- top file types for a specific project last 90 days
+SELECT FILE['type'], count(*) AS c
+FROM pypi
+WHERE project = 'boto3'
+  AND (timestamp >= DATEADD(days, -90, '2023-06-23'::Date))
+GROUP BY FILE['type']
+ORDER BY c DESC
+LIMIT 10;
 
+-- above query but filtered
+SELECT FILE['type'], count(*) AS c
+FROM pypi
+WHERE project = 'boto3'
+  AND (timestamp::Date >= DATEADD(days, -77, '2023-06-23'::Date))
+  AND timestamp::Date <= DATEADD(days, -39, '2023-06-23'::Date)
+GROUP BY FILE['type']
+ORDER BY c DESC
+LIMIT 10;
 ```
 
 ## Test configurations

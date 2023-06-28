@@ -1,4 +1,3 @@
-
 # Downloads per day by System
 
 - Aims to test rendering and filtering of a multi-series line chart showing systems for a project over time. Similar to [Downloads per day by Python version](../downloads_per_day_by_python_version) but system is higher cardinality.

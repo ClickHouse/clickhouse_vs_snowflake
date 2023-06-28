@@ -105,6 +105,9 @@ More [here](./downloads_per_day_by_system/README.md)
 
 #### Top file types per project
 
+Aims to test rendering and filtering of a pie-chart showing file types for a project. This test aggregates file types for the last 90 days for a specific project, before applying a more specific time filter.
+
+More [here](./top_file_type_per_project/README.md)
 
 #### Top projects by distro
 

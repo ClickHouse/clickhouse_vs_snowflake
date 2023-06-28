@@ -1,4 +1,3 @@
-
 # Top Sub Projects
 
 - Aims to test rendering and filtering of a pie chart showing sub-projects over time. 

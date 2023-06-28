@@ -163,22 +163,22 @@ def top_sub_projects(base_projects, max_datetime, max_date):
             open('top_sub_projects/snowflake_queries.sql', 'w') as snow_queries_file:
         for base_project in base_projects:
             lower_n_days = 90
-            click_queries_file.write(f"select project, count() c FROM pypi WHERE project ILIKE '%{base_project}%' "
+            click_queries_file.write(f"select project, count() c FROM pypi WHERE project LIKE '%{base_project}%' "
                                      f"AND date >= '{max_date}'::Date - toIntervalDay({lower_n_days}) "
                                      f"GROUP BY project ORDER BY c DESC LIMIT 10;\n")
-            snow_queries_file.write(f"select project, count(*) c FROM pypi WHERE project ILIKE '%{base_project}%' AND "
+            snow_queries_file.write(f"select project, count(*) c FROM pypi WHERE project LIKE '%{base_project}%' AND "
                                     f"(timestamp >= DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) "
                                     f"GROUP BY project ORDER BY c DESC LIMIT 10;\n")
             lower_n_days = random.randint(1, 90)
             upper_n_days = random.randint(0, lower_n_days - 1)
             difference_secs = (lower_n_days - upper_n_days) * 86400
-            click_queries_file.write(f"select project, count() c FROM pypi WHERE project ILIKE '%{base_project}%' "
+            click_queries_file.write(f"select project, count() c FROM pypi WHERE project LIKE '%{base_project}%' "
                                      f"AND date >= '{max_date}'::Date - toIntervalDay({lower_n_days}) AND "
                                      f"date  <= '{max_date}'::Date - toIntervalDay({upper_n_days}) AND "
                                      f"timestamp >= '{max_datetime}'::DateTime - toIntervalDay({lower_n_days}) "
                                      f"AND timestamp  <= '{max_datetime}'::DateTime - toIntervalDay({upper_n_days}) "
                                      f"GROUP BY project ORDER BY c DESC LIMIT 10;\n")
-            snow_queries_file.write(f"select project, count(*) c FROM pypi WHERE project ILIKE '%{base_project}%'AND "
+            snow_queries_file.write(f"select project, count(*) c FROM pypi WHERE project LIKE '%{base_project}%'AND "
                                     f"(timestamp >= DATEADD(days, -{lower_n_days}, '{max_datetime}'::DateTime)) "
                                     f"AND timestamp <= DATEADD(days, -{upper_n_days},  '{max_datetime}'::DateTime) "
                                     f"GROUP BY project  ORDER BY c DESC LIMIT 10;\n")

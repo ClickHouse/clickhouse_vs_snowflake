@@ -1,4 +1,3 @@
-
 # Downloads per day by Python version
 
 - Aims to test rendering and filtering of a multi-series line chart showing downloads for a project over time.
