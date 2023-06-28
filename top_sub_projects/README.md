@@ -11,7 +11,7 @@ SELECT splitByChar('-', project)[1] as base from pypi GROUP BY base ORDER BY cou
 We have extended this list of 20 with `mysql`, `postgres`, `snowflake`, `elasticsearch` and `clickhouse`  for fun.
 
 - This test aggregates sub-projects for the last 90 days, sorting by number of downloads and filtering to a project term. 
-- A narrower time filter is then applied to a random time frame (same random values for both databases). This time filter is limited to a day granularity so we can exploit materialized views in ClickHouse and Snowflake.
+- A narrower time filter is then applied to a random time frame (same random values for both databases). 
 - This simulates a user viewing top sub-projects for a term over a time period, and then drilling down to a specific set of days.
 
 ## Queries 

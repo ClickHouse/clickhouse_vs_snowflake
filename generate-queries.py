@@ -129,7 +129,7 @@ def top_file_type_per_project(projects, max_date):
                                      f"GROUP BY file.type ORDER BY c DESC LIMIT 10;\n")
             snow_queries_file.write(f"SELECT file['type'], count(*) as c FROM pypi WHERE project = '{project}' "
                                     f"AND (timestamp::Date >= DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) "
-                                    f"AND timestamp:Date <= DATEADD(days, -{upper_n_days}, '{max_date}'::Date) "
+                                    f"AND timestamp::Date <= DATEADD(days, -{upper_n_days}, '{max_date}'::Date) "
                                     f"GROUP BY file['type'] ORDER BY c DESC LIMIT 10;\n")
 
 
