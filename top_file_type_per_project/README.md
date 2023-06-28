@@ -59,19 +59,21 @@ LIMIT 10;
 
 All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT = false;` unless stated. ClickHouse query cache is also disabled and file system cache dropped first.
 
-|      Test Config     |                                                                         ClickHouse                                                                        |                                       Snowflake                                       |
-|:--------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
-|        default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
-| date_project_cluster |                                                                             NA                                                                            | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
-|     file_type_mv     |                                   Materialized View that pre-calculates the count per (project, date, file.type) group                                    |                                          NA                                           |
+|      Test Config     |                                                                         ClickHouse                                                                         |                                       Snowflake                                       |
+|:--------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
+|        default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections.  |         Default table config and schema. No clustering or materialized views.         |
+| date_project_cluster |                                                                             NA                                                                             | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
+|     file_type_mv     | Materialized View that pre-calculates the count per (project, date, file.type) group. Details [File Type Materialized View](#file-type-materialized-view). |                                          NA                                           |
 
 
 ## Optimizations
 
 ### ClickHouse
 
-#### file_type_mv 
-Materialized View that pre-calculates the count per (project, date, file.type) group
+#### File Type Materialized View 
+
+Materialized View that pre-calculates the count per (project, date, file.type) group. 
+
 ```sql
 -- MV target table
 CREATE TABLE pypi_file_type_mv
@@ -143,7 +145,10 @@ LIMIT 10
 └─────────────┴────────────┘
 
 2 rows in set. Elapsed: 0.278 sec. Processed 32.77 thousand rows, 1.30 MB (117.89 thousand rows/s., 4.68 MB/s.)
-
 ```
 
+To use this optimization the queries must be modified. An adapted set of queries can be found in `file_type_mv_clickhouse_queries.sql`. To use these queries when running `clickhouse.sh`, set the environment variable `QUERY_FILE` to `file_type_mv_clickhouse_queries.sql` i.e.
 
+```bash
+export QUERY_FILE=file_type_mv_clickhouse_queries.sql
+```

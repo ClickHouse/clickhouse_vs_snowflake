@@ -137,6 +137,9 @@ copy into PYPI from (select
     $1:tls_cipher     as tls_cipher
     from @pypi_stage_2023)
 pattern= 'pypi/file_downloads/2023/.*'
+
+-- disable query cache
+ALTER USER <user> SET USE_CACHED_RESULT = false;
 ```
 
 ## Queries
@@ -159,11 +162,19 @@ export CLICKHOUSE_PORT=8443
 python generate-queries.py.
 ```
 
-Queries will be generated into the sub folders.
+Queries will be generated into the sub folders, in files `clickhouse_queries.sql` and `snowflake_queries.sql` (see below).
 
 ### Queries
 
-Queries consist of 6 different query types, each in their own folder, aimed to test cases where queries are part of the `ORDER BY` (ClickHouse) and `CLUSTER BY` (Snowflake) clauses and when they are not.
+Queries consist of 6 different query types, each in their own folder, aimed at different configurations of ClickHouse and Snowflake. 
+
+For each query type, a set of queries can be found in `clickhouse_queries.sql` and `snowflake_queries.sql` for ClickHouse and Snowflake respectively.
+
+These files provide the default queries used for most configurations. If the queries need to be overwritten for a configuration, they can be found in a dedicated file with the prefix denoting the configuration e.g. `file_type_mv_clickhouse_queries.sql`. By default, the `clickhouse_queries.sql` and `snowflake_queries.sql` are used in tests. This can be overridden with he parameter `QUERY_FILE` - see [Running Tests](#running-tests).
+
+**These custom queries are not generated and must be manually updated**.
+
+If re-generating queries, users should ensure any custom queries are updated e.g. to use the same date ranges - thus representing a fair comparison.
 
 #### Downloads per day
 

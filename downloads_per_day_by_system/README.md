@@ -108,14 +108,14 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 |:---------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
 |         default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
 |  date_project_cluster |                                                                            NA                                                                             | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
-| prj_cnt_by_prj_system |                                       Projection for speeding up the subquery (see [below](#prj_cnt_by_prj_system))                                       |                                           TODO                                        |
+| prj_cnt_by_prj_system |                                 Projection for speeding up the subquery (see [below](#projection-by-project-and-system))                                  |                                           TODO                                        |
 
 
 ## Optimizations
 
 ### ClickHouse
 
-#### prj_cnt_by_prj_system
+#### Projection by project and system
 
 Projection for speeding up the subquery.
 

@@ -39,7 +39,7 @@ echo "{\"system\":\"ClickHouse\",\"date\":\"${now}\",\"machine\":\"${spec}\",\"c
 echo "dropping file system cache"
 /opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --format=Null --query="SYSTEM DROP FILESYSTEM CACHE${on_cluster}"
 
-cat $folder/clickhouse_queries.sql | while read query; do
+cat $folder/${QUERY_FILE:=clickhouse_queries.sql} | while read query; do
     echo -n "[" >> $folder/clickhouse_temp_${now_epoch}.json
     for i in $(seq 1 $TRIES); do
         RES=$(/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --time --format=Null --query="${query} ${CLICKHOUSE_SETTINGS};" 2>&1)
