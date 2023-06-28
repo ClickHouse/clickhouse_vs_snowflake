@@ -127,7 +127,7 @@ ALTER TABLE pypi
     (
         SELECT
             project,
-            system.1 as my_name, -- doesn't work with system.name TODO: report to dev
+            system.1 as my_name, -- doesn't work with system.name
             count() as c
         GROUP BY project, my_name
     );
@@ -190,4 +190,18 @@ ORDER BY day ASC, count DESC;
 -- │                     Parts: 4/4                                                                                 │
 -- │                     Granules: 4/122                                                                            │
 -- └────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Snowflake
+
+#### mv_cnt_by_system
+
+Materialized view for speeding up the subquery. Conceptually similar to above ClickHouse optimization.
+
+```sql
+CREATE OR REPLACE MATERIALIZED VIEW cnt_by_system AS
+  SELECT project, system['name'], count(*) as count FROM PYPI.PYPI_CLUSTERED.PYPI GROUP BY project, system['name'];
+
+
+
 ```

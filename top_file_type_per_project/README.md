@@ -2,7 +2,7 @@
 
 - Aims to test rendering and filtering of a pie-chart showing file types for a project.
 - This test aggregates file types for the last 90 days for a specific project. 
-- A narrower time filter is then applied to a random time frame (same random values for both databases). This time filter is limited to a day granularity so we can exploit materialized views in ClickHouse and Snowflake.
+- A narrower time filter is then applied to a random time frame (same random values for both databases). This time filter is limited to a day granularity, so we can exploit materialized views in ClickHouse and Snowflake.
 - By default, this uses the 100 most popular projects, for a total of 200 queries.
 - This simulates a user viewing an overview of file types for a project grouped (e.g. as a pie chart) before drilling down on a timeframe.
 
