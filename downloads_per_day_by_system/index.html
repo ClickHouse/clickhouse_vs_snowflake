@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ClickHouse vs Snowflake - Downloads per Day by System</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="data:image/gif;base64,R0lGODlhIAAgAOMPAHMUEmkyHOcbF8UvJts/E3BeOih1YziiQmebLt2AFjeyQKqZKNWPjLybfPfcDP///yH5BAEKAA8ALAAAAAAgACAAAATg8MlJ6ws26z0EGcQmZgAhnN6oPg0wDA0zrGMTAADDxEJCZ4Gba8c4hX4Uw+XWeYGOyMdhgkuYrAToqIBQHBCIKQ6wcJhPyINarUBcyuYE+ndQeOsKuNlxmv3CdnZfew5yAlEPC12BhFhZiBJ2CI1GkBMHeoV9PpYPhIUDBqIFnZ8EBaKplqYMqaqIewl8A6iupFF7C1YCoaJqq4UOWQIBBmtTuIQmWWxekJQeYWuWcFYPfl+dLAELOxML2hIYDeEWt7flEufknTZB7+8NBeyINxjqDwU4QYg26BTu6KVTEQEAOw==">
+    <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --color: black;
+            --title-color: black;
+            --background-color: white;
+
+            --link-color: #08F;
+            --link-hover-color: #F40;
+
+            --selector-text-color: black;
+            --selector-active-text-color: black;
+            --selector-background-color: #EEE;
+            --selector-active-background-color: #FFCB80;
+            --selector-hover-text-color: black;
+            --selector-hover-background-color: #FDB;
+
+            --summary-every-other-row-color: #F8F8F8;
+            --highlight-color: #EEE;
+            --bar-color: #FFCB80;
+
+            --tooltip-text-color: white;
+            --tooltip-background-color: black;
+
+            --nothing-selected-color: #CCC;
+            --shadow-color: grey;
+        }
+
+        [data-theme="dark"] {
+            --color: #CCC;
+            --title-color: white;
+            --background-color: #04293A;
+
+            --link-color: #8CF;
+            --link-hover-color: #FFF;
+
+            --selector-text-color: white;
+            --selector-background-color: #444;
+            --selector-active-text-color: white;
+            --selector-active-background-color: #088;
+            --selector-hover-text-color: black;
+            --selector-hover-background-color: white;
+
+            --summary-every-other-row-color: #042e41;
+            --highlight-color: #064663;
+            --bar-color: #088;
+
+            --tooltip-text-color: white;
+            --tooltip-background-color: #444;
+
+            --nothing-selected-color: #666;
+            --shadow-color: black;
+        }
+
+        html, body {
+            color: var(--color);
+            background-color: var(--background-color);
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: auto;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            padding: 1% 3% 0 3%;
+        }
+
+        h1 {
+            color: var(--title-color);
+        }
+
+        table {
+             border-spacing: 1px;
+        }
+
+        .stick-left {
+            position: sticky;
+            left: 0px;
+        }
+
+        .selectors-container {
+            padding: 2rem 0 2rem 0;
+            user-select: none;
+        }
+
+        .selectors-container th {
+            text-align: left;
+            vertical-align: top;
+            white-space: nowrap;
+            padding-top: 0.5rem;
+            padding-right: 1rem;
+        }
+
+        .selector {
+            display: inline-block;
+            margin-left: 0.1rem;
+            padding: 0.2rem 0.5rem 0.2rem 0.5rem;
+            background: var(--selector-background-color);
+            color: var(--selector-text-color);
+            border: 0.2rem solid var(--background-color);
+            border-radius: 0.5rem;
+        }
+
+        .selector-active {
+            color: var(--selector-active-text-color);
+            background: var(--selector-active-background-color);
+        }
+
+        a, a:visited {
+            text-decoration: none;
+            color: var(--link-color);
+            cursor: pointer;
+        }
+
+        a:hover {
+            color: var(--link-hover-color);
+        }
+
+        .selector:hover {
+            color: var(--selector-hover-text-color) !important;
+            background: var(--selector-background-color);
+        }
+
+        .selector-active:hover {
+            background: var(--selector-hover-background-color);
+        }
+
+        #summary tr:nth-child(odd) {
+            background: var(--summary-every-other-row-color);
+        }
+
+        .summary-name {
+            white-space: nowrap;
+            text-align: right;
+            padding-right: 1rem;
+        }
+
+        .summary-bar-cell {
+            width: 100%;
+        }
+
+        .summary-bar {
+            height: 1rem;
+            background: var(--bar-color);
+            border-radius: 0 0.2rem 0.2rem 0;
+        }
+
+        .summary-number {
+            font-family: monospace;
+            text-align: right;
+            padding-left: 1rem;
+            white-space: nowrap;
+        }
+
+        th {
+            padding-bottom: 0.5rem;
+        }
+
+        .th-entry-hilite {
+            background: var(--highlight-color);
+            font-weight: bold;
+        }
+
+        .summary-row:hover, .summary-row-hilite {
+            background: var(--highlight-color) !important;
+            font-weight: bold;
+        }
+
+        #details {
+            padding-bottom: 1rem;
+        }
+
+        #details th {
+            vertical-align: bottom;
+            white-space: pre;
+        }
+
+        #details td {
+            white-space: pre;
+            font-family: monospace;
+            text-align: right;
+            padding: 0.1rem 0.5rem 0.1rem 0.5rem;
+        }
+
+        .shadow:hover {
+            box-shadow: 0 0 1rem var(--shadow-color);
+            position: relative;
+        }
+
+        #nothing-selected {
+            display: none;
+            font-size: 32pt;
+            font-weight: bold;
+            color: var(--nothing-selected-color);
+        }
+
+        .note {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: calc(100% + 0.5rem);
+            visibility: hidden;
+            background-color: var(--tooltip-background-color);
+            color: var(--tooltip-text-color);
+            box-shadow: 0 0 1rem var(--shadow-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            z-index: 1;
+            text-align: left;
+            white-space: normal;
+        }
+
+        .tooltip-result {
+            left: calc(50% - 0.25rem);
+            width: 20rem;
+            margin-left: -10rem;
+        }
+
+        .tooltip-query {
+            left: 0;
+            width: 40rem;
+            margin-left: -3rem;
+        }
+
+        .note:hover .tooltip {
+            visibility: visible;
+        }
+
+        .tooltip::after {
+            content: " ";
+            position: absolute;
+            top: 100%;
+            border-width: 0.5rem;
+            border-style: solid;
+            border-color: var(--tooltip-background-color) transparent transparent transparent;
+        }
+
+        .tooltip-result::after {
+            left: 50%;
+            margin-left: -1rem;
+        }
+
+        .tooltip-query::after {
+            left: 3rem;
+            margin-left: 0.5rem;
+        }
+
+        .nowrap {
+            text-wrap: none;
+        }
+
+        .themes {
+            float: right;
+            font-size: 200%;
+            cursor: pointer;
+        }
+
+        #toggle-dark, #toggle-light {
+            padding-right: 0.5rem;
+            cursor: pointer;
+        }
+
+        #toggle-dark:hover, #toggle-light:hover {
+            display: inline-block;
+            transform: translate(1px, 1px);
+            filter: brightness(125%);
+        }
+    </style>
+    <script type="text/javascript">
+
+const data = [
+{"system":"ClickHouse","date":"2023-06-28","machine":"720_GB","config":"default","comment":"","tags":["Cloud"],"data_size":991638026556,"result":[[5.13,4.627,3.875],[3.635,2.993,2.793],[3.154,2.422,2.437],[1.619,1.095,0.932],[3.613,2.189,3.471],[1.24,1.709,0.922],[2.738,2.594,2.491],[1.788,1.495,1.738],[2.736,3.135,2.039],[1.136,2.149,1.163],[3.109,2.434,1.92],[2.773,2.175,2.026],[2.932,2.196,2.725],[1.342,1.044,0.967],[2.008,2.42,2.406],[0.926,0.67,1],[2.053,1.702,1.688],[1.157,1.997,0.918],[2.378,1.729,1.777],[2.131,1.542,1.873],[2.445,1.978,2.386],[0.946,1.059,0.69],[2.344,2.337,2.027],[0.882,0.691,0.699],[2.661,1.537,1.997],[1.278,1.048,0.84],[1.947,1.665,1.863],[1.23,1.367,0.951],[1.942,1.201,2.083],[1.342,1.391,1.17],[1.891,1.484,1.462],[1.55,0.804,1.068],[2.834,1.377,1.331],[1.231,1.565,2.235],[2.457,1.889,1.181],[0.758,0.741,1.22],[2.084,1.133,1.764],[0.867,0.971,1.057],[1.711,1.796,1.096],[0.932,1.4,0.796],[1.826,1.861,1.082],[1.029,1.204,0.713],[1.776,1.195,1.518],[1.136,1.403,0.7],[1.377,0.961,1.523],[0.49,0.881,0.358],[1.193,1.421,0.982],[1.111,1.225,0.819],[1.816,1.62,1.259],[1.264,0.98,0.96],[1.691,0.957,0.954],[1.49,0.993,0.764],[1.759,0.95,1.627],[0.746,0.776,0.416],[1.131,0.837,0.841],[1.528,0.87,0.509],[1.374,0.861,0.872],[1.534,0.534,0.984],[1.471,0.875,1.434],[0.911,0.975,0.64],[1.59,1.333,0.875],[1.485,1.069,0.6],[1.801,1.974,1.764],[0.699,0.442,0.737],[1.414,1.073,0.746],[0.807,0.487,0.568],[1.412,1.074,1.28],[1.066,1.098,0.951],[1.792,1.414,0.942],[1.47,0.908,0.676],[1.813,1.24,0.887],[0.971,1.343,0.826],[1.64,1.267,1.612],[0.714,0.481,0.98],[1.186,0.852,1.297],[0.497,0.643,0.331],[1.618,1.788,0.734],[1.191,0.701,0.464],[1.371,1.408,0.806],[1.711,0.836,1.177],[1.402,1.541,0.87],[1.264,1.241,0.788],[1.206,1.417,0.674],[0.784,0.483,1.484],[1.316,0.937,1.463],[0.589,0.594,0.309],[1.049,0.645,1.458],[0.82,1.379,0.571],[1.659,0.677,1.208],[0.537,0.631,0.297],[0.977,0.648,0.638],[0.723,0.248,0.269],[1.245,0.783,0.758],[0.914,0.592,0.992],[1.312,0.66,0.71],[0.953,1.355,0.805],[0.922,1.448,0.61],[0.512,0.661,0.465],[1.24,1.365,1.108],[0.689,0.647,0.37],[1.203,0.917,1.11],[0.705,0.958,0.835],[1.377,1.189,0.553],[0.753,0.673,0.364],[1.035,1.226,0.588],[0.959,0.494,0.501],[0.73,0.948,0.568],[0.773,0.388,1.036],[1.031,1.084,0.606],[0.803,1.213,0.638],[1.19,0.666,0.858],[0.56,0.741,0.42],[1.306,0.639,0.634],[0.93,0.623,0.292],[1.239,0.571,0.566],[0.866,1.502,0.265],[1.163,0.854,0.522],[1.344,0.302,0.457],[0.929,0.526,1.225],[1.097,0.579,0.417],[1.093,0.837,0.507],[0.555,0.314,0.87],[1.446,0.639,1.238],[0.647,0.337,0.809],[0.795,0.58,0.95],[0.682,0.447,0.806],[0.856,1.097,0.914],[0.674,0.668,0.657],[1.741,0.57,0.586],[0.91,0.745,0.328],[0.958,0.508,1.06],[0.509,1.797,0.3],[1.107,0.62,1.03],[0.738,0.799,0.762],[1.122,0.925,1.077],[0.715,0.295,0.831],[1.083,0.503,0.523],[1.413,0.547,1.295],[1.26,0.518,0.531],[1.438,0.599,0.642],[0.942,0.821,0.542],[1.171,0.415,0.657],[1.091,1.031,0.586],[0.956,0.862,0.62],[0.918,1.073,0.506],[0.776,0.511,1.159],[1.464,0.526,0.982],[0.467,1.197,0.309],[1.148,0.896,0.598],[1.09,1.473,0.254],[0.883,1.118,0.531],[1.538,0.859,1.025],[0.727,0.466,0.919],[1.224,0.271,0.375],[0.944,0.529,0.516],[1.175,0.342,0.332],[1.034,0.846,0.468],[0.604,0.552,0.281],[1.174,0.741,0.948],[0.407,0.584,0.265],[0.922,0.504,1.078],[0.532,1.452,0.381],[0.924,1.461,0.537],[0.467,0.977,0.205],[0.905,1.243,0.929],[0.586,0.296,0.296],[1.047,1.071,0.733],[0.773,0.78,0.438],[0.762,1.114,0.478],[0.61,1.069,0.405],[1.091,0.838,0.493],[0.517,0.654,2.06],[0.847,1.203,1.038],[0.599,0.325,0.689],[1.033,0.861,0.673],[0.505,0.518,0.313],[0.943,1.323,0.482],[0.623,0.239,0.728],[1.042,0.771,0.958],[0.608,0.338,0.668],[1.177,1.033,0.82],[1.332,0.352,0.696],[0.697,0.821,0.465],[0.661,0.891,0.431],[0.97,0.412,0.824],[0.529,0.641,0.287],[0.801,0.51,1.093],[0.666,0.743,0.489],[0.721,0.856,0.464],[0.636,0.483,0.288],[1.164,0.507,1.109],[0.763,1.307,0.375],[0.837,0.814,0.37],[0.696,0.618,0.352],[0.875,0.76,0.603],[0.53,0.623,0.288],[0.867,0.395,0.984],[0.807,0.562,1.357],[0.867,0.391,0.97],[0.715,0.49,0.235]],"source":"downloads_per_day_by_system/results/clickhouse_720_GB_default.json"}
+,{"system":"Snowflake","date":"2023-06-28","machine":"2XLARGE","config":"date_project_cluster","comment":"","tags":["Cloud"],"data_size":1467343154176,"result":[[6.923,7.086,6.628],[5.209,4.549,5.087],[4.318,4.139,4.725],[2.223,2.279,2.866],[4.63,5.184,4.986],[3.379,2.909,3.208],[4.073,4.296,4.345],[3.17,2.655,3.305],[3.923,3.682,4.059],[2.231,2.08,2.256],[3.803,3.546,4.13],[3.347,4.13,3.341],[3.554,3.819,3.49],[2.517,2.343,2.72],[4.058,3.498,4.063],[2.392,2.039,2.507],[3.847,3.642,3.949],[2.879,2.371,2.323],[4.836,4,4.109],[3.931,3.756,3.949],[3.384,3.136,3.819],[1.825,1.988,1.848],[3.657,3.256,3.332],[2.385,1.862,2.27],[3.298,3.599,3.324],[2.913,2.295,2.349],[3.727,3.123,3.14],[3.233,3.006,2.525],[6.157,5.844,5.509],[4.843,4.882,4.33],[3.815,3.695,3.137],[2.761,3.373,2.948],[3.042,3.431,3.342],[2.424,2.645,2.616],[3.502,2.988,2.761],[2.298,1.926,1.781],[3.081,3.234,2.939],[2.042,1.767,2.264],[2.926,3.502,2.929],[2.212,2.491,2.583],[3.672,3.419,3.393],[2.601,2.46,2.178],[3.358,3.128,2.91],[2.458,1.917,1.909],[3.267,2.67,2.472],[2.173,1.528,1.431],[2.949,3.305,2.709],[2.944,2.384,2.418],[2.964,3.359,2.801],[2.623,3.237,2.763],[2.808,2.58,2.844],[1.912,2.357,2.214],[2.983,2.796,3.351],[2.323,1.568,2.274],[2.723,2.644,3.19],[2.265,1.748,2.149],[3.491,2.627,2.48],[1.577,2.102,1.523],[2.972,2.532,2.536],[2.021,2.562,1.925],[2.647,2.594,2.93],[1.963,2.072,2.411],[3.098,2.887,3.307],[1.58,1.72,1.768],[3.253,2.806,3.828],[1.899,1.982,1.824],[2.779,2.501,2.418],[2.856,2.535,2.421],[2.699,2.906,2.94],[2.523,2.009,2.11],[3.16,2.597,2.594],[2.166,2.647,2.214],[2.515,2.886,2.758],[1.614,1.555,2.097],[2.495,2.654,3.24],[2.005,1.574,2.06],[2.791,2.354,2.554],[3.565,1.865,1.858],[3.168,2.475,3.643],[2.794,12.549,2.958],[5.229,5.642,5.611],[4.563,4.407,5.033],[2.369,3.008,2.274],[1.963,1.843,2.149],[5.137,4.928,5.901],[3.518,3.612,3.538],[2.802,3.13,2.361],[1.757,2.279,1.794],[2.477,2.281,2.702],[1.719,1.488,1.48],[2.718,2.228,2.161],[2.047,1.444,1.455],[2.247,2.648,2.458],[1.796,2.422,1.971],[2.607,2.438,2.825],[1.984,1.887,2.273],[2.244,2.221,3.079],[2.242,1.999,1.88],[2.887,2.377,4.809],[2.027,2.824,1.58],[3.546,3.751,3.623],[3.15,3.265,3.05],[2.196,2.723,2.354],[1.948,2.19,2.003],[2.051,1.981,2.491],[1.941,1.585,1.499],[5.889,2.397,9.003],[2.207,1.648,1.627],[2.966,2.388,2.235],[2.12,1.612,2.18],[2.904,2.217,2.074],[1.693,3.1,1.851],[2.331,3.165,2.216],[1.555,1.809,2.042],[2.7,2.665,2.557],[1.914,1.439,1.442],[2.933,2.885,2.308],[2.19,2.161,2.71],[2.366,2.92,2.409],[3.913,5.547,1.805],[2.671,2.048,1.936],[1.475,2.021,1.966],[1.997,2.095,2.459],[1.732,1.477,2.165],[2.63,2.509,3.098],[2.753,1.837,1.8],[2.615,2.163,2.046],[2.115,1.682,1.525],[2.576,2.878,2.707],[2.246,2.469,2.041],[2.418,2.974,2.974],[1.586,1.605,1.984],[2.839,2.457,2.864],[2.203,2.477,2.42],[2.208,2.539,2.219],[1.964,1.652,1.454],[2.25,2.177,2.437],[1.992,2.009,6.441],[2.276,2.268,3.16],[1.839,2.298,2.167],[2.405,2.365,2.259],[2,1.753,2.311],[2.092,1.927,2.213],[2.341,1.931,1.645],[2.212,2.469,2.246],[4.466,4.893,1.983],[2.109,2.362,2.923],[1.487,1.621,1.669],[2.296,2.713,2.231],[1.536,1.845,1.541],[5.061,4.728,4.179],[3.667,3.432,3.5],[2.243,2.542,2.112],[1.692,1.486,1.989],[2.392,1.929,2.575],[1.544,1.758,1.538],[4.03,1.952,1.898],[1.514,1.32,1.762],[2.114,1.917,2.527],[1.357,3.151,1.49],[2.048,1.889,1.909],[2.158,1.724,1.86],[2.439,2.809,2.135],[1.242,1.767,1.876],[2.225,2.407,2.632],[1.717,1.621,2.162],[2.687,2.749,2.235],[1.823,2.604,1.96],[2.617,2.216,2.18],[2.024,1.64,1.896],[1.991,2.05,2.465],[2.075,1.65,4.153],[2.791,2.038,2.058],[2.12,1.72,1.676],[2.734,2.378,2.08],[2.12,2.081,1.604],[2.124,1.892,1.945],[1.553,1.938,1.536],[2.28,2.519,1.948],[1.655,1.557,1.514],[2.447,1.828,1.891],[2.151,2.037,1.631],[2.114,2.06,2.234],[1.902,1.992,1.642],[2.381,2.792,2.855],[1.563,1.524,1.655],[4.941,5.162,5.065],[4.626,4.821,3.745],[3.801,3.979,4.461],[2.949,2.477,2.864],[4.609,5.014,4.461],[3.873,4.062,3.652],[2.214,2.075,2.479],[1.686,1.869,1.635],[2.097,2.491,1.814],[1.57,2.058,1.736],[4.616,4.621,5.044],[4.649,4.381,4.639],[2.014,2.516,1.9],[1.465,1.744,1.422]],"source":"downloads_per_day_by_system/results/snowflake_2XLARGE_date_project_cluster.json"}
+]; // end of data
+const queries = [
+"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'boto3') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'boto3' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 38880 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'boto3' AND date >= '2023-06-23'::Date - toIntervalDay(84) AND date <= '2023-06-23'::Date - toIntervalDay(39) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(84) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(39) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'boto3' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'urllib3') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'urllib3' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 3456 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'urllib3' AND date >= '2023-06-23'::Date - toIntervalDay(17) AND date <= '2023-06-23'::Date - toIntervalDay(13) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(17) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(13) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'urllib3' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'requests') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'requests' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 8640 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'requests' AND date >= '2023-06-23'::Date - toIntervalDay(22) AND date <= '2023-06-23'::Date - toIntervalDay(12) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(22) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(12) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'requests' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'botocore') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'botocore' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 24192 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'botocore' AND date >= '2023-06-23'::Date - toIntervalDay(56) AND date <= '2023-06-23'::Date - toIntervalDay(28) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(56) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(28) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'botocore' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'charset-normalizer') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'charset-normalizer' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 6048 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'charset-normalizer' AND date >= '2023-06-23'::Date - toIntervalDay(77) AND date <= '2023-06-23'::Date - toIntervalDay(70) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(77) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(70) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'charset-normalizer' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'setuptools') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'setuptools' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 66528 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'setuptools' AND date >= '2023-06-23'::Date - toIntervalDay(90) AND date <= '2023-06-23'::Date - toIntervalDay(13) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(90) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(13) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'setuptools' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'idna') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'idna' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 11232 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'idna' AND date >= '2023-06-23'::Date - toIntervalDay(60) AND date <= '2023-06-23'::Date - toIntervalDay(47) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(60) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(47) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'idna' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'certifi') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'certifi' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 6048 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'certifi' AND date >= '2023-06-23'::Date - toIntervalDay(50) AND date <= '2023-06-23'::Date - toIntervalDay(43) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(50) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(43) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'certifi' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 's3transfer') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 's3transfer' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 17280 second) as period, count() as count, system.name as system FROM pypi WHERE project = 's3transfer' AND date >= '2023-06-23'::Date - toIntervalDay(71) AND date <= '2023-06-23'::Date - toIntervalDay(51) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(71) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(51) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 's3transfer' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'python-dateutil') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'python-dateutil' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 47520 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'python-dateutil' AND date >= '2023-06-23'::Date - toIntervalDay(68) AND date <= '2023-06-23'::Date - toIntervalDay(13) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(68) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(13) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'python-dateutil' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'awscli') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'awscli' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 864 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'awscli' AND date >= '2023-06-23'::Date - toIntervalDay(15) AND date <= '2023-06-23'::Date - toIntervalDay(14) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(15) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(14) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'awscli' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'typing-extensions') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'typing-extensions' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 1728 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'typing-extensions' AND date >= '2023-06-23'::Date - toIntervalDay(8) AND date <= '2023-06-23'::Date - toIntervalDay(6) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(8) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(6) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'typing-extensions' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'six') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'six' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 21600 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'six' AND date >= '2023-06-23'::Date - toIntervalDay(25) AND date <= '2023-06-23'::Date - toIntervalDay(0) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(25) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(0) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'six' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pyyaml') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyyaml' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 33696 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pyyaml' AND date >= '2023-06-23'::Date - toIntervalDay(40) AND date <= '2023-06-23'::Date - toIntervalDay(1) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(40) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(1) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyyaml' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'google-api-core') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'google-api-core' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 45792 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'google-api-core' AND date >= '2023-06-23'::Date - toIntervalDay(70) AND date <= '2023-06-23'::Date - toIntervalDay(17) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(70) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(17) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'google-api-core' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'wheel') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'wheel' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 27648 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'wheel' AND date >= '2023-06-23'::Date - toIntervalDay(84) AND date <= '2023-06-23'::Date - toIntervalDay(52) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(84) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(52) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'wheel' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'cryptography') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'cryptography' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 27648 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'cryptography' AND date >= '2023-06-23'::Date - toIntervalDay(80) AND date <= '2023-06-23'::Date - toIntervalDay(48) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(80) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(48) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'cryptography' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'packaging') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'packaging' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 1728 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'packaging' AND date >= '2023-06-23'::Date - toIntervalDay(57) AND date <= '2023-06-23'::Date - toIntervalDay(55) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(57) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(55) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'packaging' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'numpy') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'numpy' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 7776 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'numpy' AND date >= '2023-06-23'::Date - toIntervalDay(25) AND date <= '2023-06-23'::Date - toIntervalDay(16) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(25) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(16) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'numpy' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pip') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pip' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 21600 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pip' AND date >= '2023-06-23'::Date - toIntervalDay(28) AND date <= '2023-06-23'::Date - toIntervalDay(3) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(28) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(3) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pip' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'jmespath') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'jmespath' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 25056 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'jmespath' AND date >= '2023-06-23'::Date - toIntervalDay(68) AND date <= '2023-06-23'::Date - toIntervalDay(39) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(68) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(39) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'jmespath' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'importlib-metadata') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'importlib-metadata' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 20736 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'importlib-metadata' AND date >= '2023-06-23'::Date - toIntervalDay(82) AND date <= '2023-06-23'::Date - toIntervalDay(58) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(82) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(58) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'importlib-metadata' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'zipp') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'zipp' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 864 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'zipp' AND date >= '2023-06-23'::Date - toIntervalDay(32) AND date <= '2023-06-23'::Date - toIntervalDay(31) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(32) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(31) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'zipp' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'click') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'click' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 55296 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'click' AND date >= '2023-06-23'::Date - toIntervalDay(82) AND date <= '2023-06-23'::Date - toIntervalDay(18) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(82) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(18) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'click' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pyasn1') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyasn1' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 65664 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pyasn1' AND date >= '2023-06-23'::Date - toIntervalDay(78) AND date <= '2023-06-23'::Date - toIntervalDay(2) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(78) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(2) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyasn1' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'colorama') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'colorama' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 9504 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'colorama' AND date >= '2023-06-23'::Date - toIntervalDay(61) AND date <= '2023-06-23'::Date - toIntervalDay(50) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(61) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(50) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'colorama' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'protobuf') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'protobuf' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 1728 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'protobuf' AND date >= '2023-06-23'::Date - toIntervalDay(2) AND date <= '2023-06-23'::Date - toIntervalDay(0) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(2) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(0) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'protobuf' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'rsa') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'rsa' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 8640 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'rsa' AND date >= '2023-06-23'::Date - toIntervalDay(28) AND date <= '2023-06-23'::Date - toIntervalDay(18) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(28) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(18) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'rsa' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'attrs') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'attrs' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 6912 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'attrs' AND date >= '2023-06-23'::Date - toIntervalDay(35) AND date <= '2023-06-23'::Date - toIntervalDay(27) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(35) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(27) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'attrs' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pytz') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pytz' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 27648 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pytz' AND date >= '2023-06-23'::Date - toIntervalDay(67) AND date <= '2023-06-23'::Date - toIntervalDay(35) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(67) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(35) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pytz' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pandas') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pandas' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 28512 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pandas' AND date >= '2023-06-23'::Date - toIntervalDay(46) AND date <= '2023-06-23'::Date - toIntervalDay(13) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(46) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(13) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pandas' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'markupsafe') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'markupsafe' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 6048 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'markupsafe' AND date >= '2023-06-23'::Date - toIntervalDay(17) AND date <= '2023-06-23'::Date - toIntervalDay(10) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(17) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(10) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'markupsafe' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'jinja2') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'jinja2' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 12960 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'jinja2' AND date >= '2023-06-23'::Date - toIntervalDay(16) AND date <= '2023-06-23'::Date - toIntervalDay(1) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(16) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(1) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'jinja2' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'cffi') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'cffi' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 57024 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'cffi' AND date >= '2023-06-23'::Date - toIntervalDay(74) AND date <= '2023-06-23'::Date - toIntervalDay(8) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(74) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(8) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'cffi' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pyjwt') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyjwt' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 31968 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pyjwt' AND date >= '2023-06-23'::Date - toIntervalDay(72) AND date <= '2023-06-23'::Date - toIntervalDay(35) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(72) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(35) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyjwt' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pycparser') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pycparser' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 50112 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pycparser' AND date >= '2023-06-23'::Date - toIntervalDay(58) AND date <= '2023-06-23'::Date - toIntervalDay(0) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(58) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(0) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pycparser' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'aiobotocore') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'aiobotocore' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 12960 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'aiobotocore' AND date >= '2023-06-23'::Date - toIntervalDay(29) AND date <= '2023-06-23'::Date - toIntervalDay(14) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(29) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(14) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'aiobotocore' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 's3fs') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 's3fs' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 5184 second) as period, count() as count, system.name as system FROM pypi WHERE project = 's3fs' AND date >= '2023-06-23'::Date - toIntervalDay(19) AND date <= '2023-06-23'::Date - toIntervalDay(13) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(19) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(13) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 's3fs' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'fsspec') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'fsspec' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 21600 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'fsspec' AND date >= '2023-06-23'::Date - toIntervalDay(50) AND date <= '2023-06-23'::Date - toIntervalDay(25) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(50) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(25) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'fsspec' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'grpcio-status') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'grpcio-status' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 59616 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'grpcio-status' AND date >= '2023-06-23'::Date - toIntervalDay(89) AND date <= '2023-06-23'::Date - toIntervalDay(20) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(89) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(20) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'grpcio-status' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'googleapis-common-protos') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'googleapis-common-protos' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 63072 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'googleapis-common-protos' AND date >= '2023-06-23'::Date - toIntervalDay(77) AND date <= '2023-06-23'::Date - toIntervalDay(4) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(77) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(4) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'googleapis-common-protos' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'docutils') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'docutils' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 36288 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'docutils' AND date >= '2023-06-23'::Date - toIntervalDay(56) AND date <= '2023-06-23'::Date - toIntervalDay(14) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(56) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(14) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'docutils' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'google-auth') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'google-auth' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 2592 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'google-auth' AND date >= '2023-06-23'::Date - toIntervalDay(7) AND date <= '2023-06-23'::Date - toIntervalDay(4) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(7) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(4) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'google-auth' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'oauthlib') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'oauthlib' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 22464 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'oauthlib' AND date >= '2023-06-23'::Date - toIntervalDay(89) AND date <= '2023-06-23'::Date - toIntervalDay(63) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(89) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(63) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'oauthlib' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'tomli') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'tomli' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 2592 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'tomli' AND date >= '2023-06-23'::Date - toIntervalDay(12) AND date <= '2023-06-23'::Date - toIntervalDay(9) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(12) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(9) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'tomli' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'wrapt') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'wrapt' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 4320 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'wrapt' AND date >= '2023-06-23'::Date - toIntervalDay(8) AND date <= '2023-06-23'::Date - toIntervalDay(3) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(8) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(3) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'wrapt' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'cachetools') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'cachetools' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 45792 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'cachetools' AND date >= '2023-06-23'::Date - toIntervalDay(73) AND date <= '2023-06-23'::Date - toIntervalDay(20) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(73) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(20) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'cachetools' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pyparsing') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyparsing' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 21600 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pyparsing' AND date >= '2023-06-23'::Date - toIntervalDay(48) AND date <= '2023-06-23'::Date - toIntervalDay(23) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(48) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(23) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyparsing' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'werkzeug') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'werkzeug' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 29376 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'werkzeug' AND date >= '2023-06-23'::Date - toIntervalDay(49) AND date <= '2023-06-23'::Date - toIntervalDay(15) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(49) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(15) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'werkzeug' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'sqlalchemy') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'sqlalchemy' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 10368 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'sqlalchemy' AND date >= '2023-06-23'::Date - toIntervalDay(44) AND date <= '2023-06-23'::Date - toIntervalDay(32) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(44) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(32) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'sqlalchemy' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'requests-oauthlib') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'requests-oauthlib' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 39744 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'requests-oauthlib' AND date >= '2023-06-23'::Date - toIntervalDay(49) AND date <= '2023-06-23'::Date - toIntervalDay(3) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(49) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(3) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'requests-oauthlib' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'multidict') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'multidict' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 12096 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'multidict' AND date >= '2023-06-23'::Date - toIntervalDay(69) AND date <= '2023-06-23'::Date - toIntervalDay(55) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(69) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(55) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'multidict' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'yarl') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'yarl' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 8640 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'yarl' AND date >= '2023-06-23'::Date - toIntervalDay(17) AND date <= '2023-06-23'::Date - toIntervalDay(7) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(17) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(7) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'yarl' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pyarrow') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyarrow' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 27648 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pyarrow' AND date >= '2023-06-23'::Date - toIntervalDay(53) AND date <= '2023-06-23'::Date - toIntervalDay(21) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(53) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(21) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyarrow' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'jsonschema') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'jsonschema' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 17280 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'jsonschema' AND date >= '2023-06-23'::Date - toIntervalDay(84) AND date <= '2023-06-23'::Date - toIntervalDay(64) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(84) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(64) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'jsonschema' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'platformdirs') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'platformdirs' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 22464 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'platformdirs' AND date >= '2023-06-23'::Date - toIntervalDay(27) AND date <= '2023-06-23'::Date - toIntervalDay(1) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(27) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(1) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'platformdirs' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'async-timeout') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'async-timeout' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 4320 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'async-timeout' AND date >= '2023-06-23'::Date - toIntervalDay(5) AND date <= '2023-06-23'::Date - toIntervalDay(0) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(5) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(0) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'async-timeout' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'aiohttp') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'aiohttp' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 5184 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'aiohttp' AND date >= '2023-06-23'::Date - toIntervalDay(9) AND date <= '2023-06-23'::Date - toIntervalDay(3) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(9) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(3) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'aiohttp' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'isodate') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'isodate' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 12960 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'isodate' AND date >= '2023-06-23'::Date - toIntervalDay(22) AND date <= '2023-06-23'::Date - toIntervalDay(7) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(22) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(7) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'isodate' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'psutil') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'psutil' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 27648 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'psutil' AND date >= '2023-06-23'::Date - toIntervalDay(60) AND date <= '2023-06-23'::Date - toIntervalDay(28) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(60) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(28) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'psutil' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pydantic') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pydantic' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 12096 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pydantic' AND date >= '2023-06-23'::Date - toIntervalDay(14) AND date <= '2023-06-23'::Date - toIntervalDay(0) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(14) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(0) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pydantic' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'decorator') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'decorator' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 12960 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'decorator' AND date >= '2023-06-23'::Date - toIntervalDay(21) AND date <= '2023-06-23'::Date - toIntervalDay(6) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(21) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(6) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'decorator' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pyasn1-modules') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyasn1-modules' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 25056 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pyasn1-modules' AND date >= '2023-06-23'::Date - toIntervalDay(45) AND date <= '2023-06-23'::Date - toIntervalDay(16) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(45) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(16) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyasn1-modules' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'soupsieve') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'soupsieve' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 23328 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'soupsieve' AND date >= '2023-06-23'::Date - toIntervalDay(87) AND date <= '2023-06-23'::Date - toIntervalDay(60) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(87) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(60) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'soupsieve' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'flask') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'flask' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 23328 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'flask' AND date >= '2023-06-23'::Date - toIntervalDay(80) AND date <= '2023-06-23'::Date - toIntervalDay(53) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(80) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(53) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'flask' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pluggy') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pluggy' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 4320 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pluggy' AND date >= '2023-06-23'::Date - toIntervalDay(11) AND date <= '2023-06-23'::Date - toIntervalDay(6) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(11) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(6) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pluggy' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pytest') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pytest' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 28512 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pytest' AND date >= '2023-06-23'::Date - toIntervalDay(38) AND date <= '2023-06-23'::Date - toIntervalDay(5) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(38) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(5) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pytest' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'beautifulsoup4') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'beautifulsoup4' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 2592 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'beautifulsoup4' AND date >= '2023-06-23'::Date - toIntervalDay(82) AND date <= '2023-06-23'::Date - toIntervalDay(79) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(82) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(79) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'beautifulsoup4' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'lxml') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'lxml' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 57888 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'lxml' AND date >= '2023-06-23'::Date - toIntervalDay(86) AND date <= '2023-06-23'::Date - toIntervalDay(19) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(86) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(19) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'lxml' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'filelock') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'filelock' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 13824 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'filelock' AND date >= '2023-06-23'::Date - toIntervalDay(22) AND date <= '2023-06-23'::Date - toIntervalDay(6) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(22) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(6) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'filelock' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'grpcio') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'grpcio' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 21600 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'grpcio' AND date >= '2023-06-23'::Date - toIntervalDay(25) AND date <= '2023-06-23'::Date - toIntervalDay(0) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(25) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(0) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'grpcio' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'greenlet') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'greenlet' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 45792 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'greenlet' AND date >= '2023-06-23'::Date - toIntervalDay(54) AND date <= '2023-06-23'::Date - toIntervalDay(1) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(54) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(1) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'greenlet' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'frozenlist') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'frozenlist' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 49248 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'frozenlist' AND date >= '2023-06-23'::Date - toIntervalDay(68) AND date <= '2023-06-23'::Date - toIntervalDay(11) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(68) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(11) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'frozenlist' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'coverage') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'coverage' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 6912 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'coverage' AND date >= '2023-06-23'::Date - toIntervalDay(8) AND date <= '2023-06-23'::Date - toIntervalDay(0) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(8) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(0) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'coverage' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'aiosignal') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'aiosignal' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 7776 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'aiosignal' AND date >= '2023-06-23'::Date - toIntervalDay(29) AND date <= '2023-06-23'::Date - toIntervalDay(20) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(29) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(20) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'aiosignal' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'azure-core') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'azure-core' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 30240 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'azure-core' AND date >= '2023-06-23'::Date - toIntervalDay(58) AND date <= '2023-06-23'::Date - toIntervalDay(23) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(58) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(23) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'azure-core' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'scipy') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'scipy' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 12096 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'scipy' AND date >= '2023-06-23'::Date - toIntervalDay(38) AND date <= '2023-06-23'::Date - toIntervalDay(24) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(38) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(24) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'scipy' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pillow') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pillow' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 25056 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pillow' AND date >= '2023-06-23'::Date - toIntervalDay(29) AND date <= '2023-06-23'::Date - toIntervalDay(0) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(29) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(0) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pillow' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'tqdm') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'tqdm' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 8640 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'tqdm' AND date >= '2023-06-23'::Date - toIntervalDay(17) AND date <= '2023-06-23'::Date - toIntervalDay(7) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(17) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(7) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'tqdm' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pyrsistent') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyrsistent' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 2592 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pyrsistent' AND date >= '2023-06-23'::Date - toIntervalDay(16) AND date <= '2023-06-23'::Date - toIntervalDay(13) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(16) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(13) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyrsistent' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'virtualenv') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'virtualenv' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 31104 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'virtualenv' AND date >= '2023-06-23'::Date - toIntervalDay(76) AND date <= '2023-06-23'::Date - toIntervalDay(40) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(76) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(40) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'virtualenv' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'et-xmlfile') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'et-xmlfile' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 864 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'et-xmlfile' AND date >= '2023-06-23'::Date - toIntervalDay(5) AND date <= '2023-06-23'::Date - toIntervalDay(4) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(5) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(4) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'et-xmlfile' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'openpyxl') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'openpyxl' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 18144 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'openpyxl' AND date >= '2023-06-23'::Date - toIntervalDay(34) AND date <= '2023-06-23'::Date - toIntervalDay(13) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(34) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(13) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'openpyxl' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'importlib-resources') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'importlib-resources' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 35424 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'importlib-resources' AND date >= '2023-06-23'::Date - toIntervalDay(77) AND date <= '2023-06-23'::Date - toIntervalDay(36) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(77) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(36) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'importlib-resources' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pyopenssl') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyopenssl' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 29376 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pyopenssl' AND date >= '2023-06-23'::Date - toIntervalDay(73) AND date <= '2023-06-23'::Date - toIntervalDay(39) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(73) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(39) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pyopenssl' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'iniconfig') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'iniconfig' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 31104 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'iniconfig' AND date >= '2023-06-23'::Date - toIntervalDay(37) AND date <= '2023-06-23'::Date - toIntervalDay(1) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(37) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(1) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'iniconfig' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pygments') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pygments' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 30240 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pygments' AND date >= '2023-06-23'::Date - toIntervalDay(39) AND date <= '2023-06-23'::Date - toIntervalDay(4) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(39) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(4) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pygments' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'chardet') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'chardet' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 6912 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'chardet' AND date >= '2023-06-23'::Date - toIntervalDay(10) AND date <= '2023-06-23'::Date - toIntervalDay(2) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(10) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(2) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'chardet' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'asn1crypto') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'asn1crypto' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 10368 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'asn1crypto' AND date >= '2023-06-23'::Date - toIntervalDay(31) AND date <= '2023-06-23'::Date - toIntervalDay(19) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(31) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(19) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'asn1crypto' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'itsdangerous') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'itsdangerous' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 16416 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'itsdangerous' AND date >= '2023-06-23'::Date - toIntervalDay(31) AND date <= '2023-06-23'::Date - toIntervalDay(12) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(31) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(12) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'itsdangerous' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'exceptiongroup') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'exceptiongroup' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 22464 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'exceptiongroup' AND date >= '2023-06-23'::Date - toIntervalDay(58) AND date <= '2023-06-23'::Date - toIntervalDay(32) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(58) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(32) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'exceptiongroup' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'websocket-client') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'websocket-client' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 11232 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'websocket-client' AND date >= '2023-06-23'::Date - toIntervalDay(64) AND date <= '2023-06-23'::Date - toIntervalDay(51) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(64) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(51) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'websocket-client' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'tabulate') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'tabulate' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 15552 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'tabulate' AND date >= '2023-06-23'::Date - toIntervalDay(36) AND date <= '2023-06-23'::Date - toIntervalDay(18) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(36) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(18) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'tabulate' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'google-api-python-client') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'google-api-python-client' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 38016 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'google-api-python-client' AND date >= '2023-06-23'::Date - toIntervalDay(59) AND date <= '2023-06-23'::Date - toIntervalDay(15) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(59) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(15) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'google-api-python-client' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'requests-toolbelt') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'requests-toolbelt' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 12096 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'requests-toolbelt' AND date >= '2023-06-23'::Date - toIntervalDay(19) AND date <= '2023-06-23'::Date - toIntervalDay(5) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(19) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(5) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'requests-toolbelt' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'google-cloud-core') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'google-cloud-core' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 32832 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'google-cloud-core' AND date >= '2023-06-23'::Date - toIntervalDay(41) AND date <= '2023-06-23'::Date - toIntervalDay(3) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(41) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(3) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'google-cloud-core' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'mypy-extensions') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'mypy-extensions' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 39744 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'mypy-extensions' AND date >= '2023-06-23'::Date - toIntervalDay(56) AND date <= '2023-06-23'::Date - toIntervalDay(10) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(56) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(10) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'mypy-extensions' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'pynacl') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pynacl' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 27648 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'pynacl' AND date >= '2023-06-23'::Date - toIntervalDay(60) AND date <= '2023-06-23'::Date - toIntervalDay(28) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(60) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(28) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'pynacl' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'google-cloud-storage') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'google-cloud-storage' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 47520 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'google-cloud-storage' AND date >= '2023-06-23'::Date - toIntervalDay(69) AND date <= '2023-06-23'::Date - toIntervalDay(14) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(69) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(14) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'google-cloud-storage' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+,"SELECT date as day, system.name as system, count() AS count FROM pypi WHERE (project = 'psycopg2-binary') AND (date >= '2023-06-23'::Date - toIntervalDay(90)) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'psycopg2-binary' GROUP BY system ORDER BY count() DESC LIMIT 10) GROUP BY day, system ORDER BY day ASC, count DESC;"
+,"SELECT toStartOfInterval(timestamp, INTERVAL 6912 second) as period, count() as count, system.name as system FROM pypi WHERE project = 'psycopg2-binary' AND date >= '2023-06-23'::Date - toIntervalDay(9) AND date <= '2023-06-23'::Date - toIntervalDay(1) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(9) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(1) AND system IN ( SELECT system.name as system FROM pypi WHERE system != '' AND project = 'psycopg2-binary' GROUP BY system ORDER BY count() DESC LIMIT 10)GROUP BY period, system ORDER BY period ASC, count DESC;"
+]; // end of queries
+
+    </script>
+</head>
+<body>
+
+<div class="header stick-left">
+    <span class="nowrap themes"><span id="toggle-dark">🌚</span><span id="toggle-light">🌞</span></span>
+    <h1>ClickHouse vs Snowflake - Downloads per Day by System</h1>
+    <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Methodology</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Reproduce and Validate the Results</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Add a System</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Report Mistake</a>
+</div>
+
+<table class="selectors-container stick-left">
+    <tr>
+        <th>System: </th>
+        <td id="selectors_system">
+            <a id="select-all-systems" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Type: </th>
+        <td id="selectors_type">
+            <a id="select-all-types" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Machine: </th>
+        <td id="selectors_machine">
+            <a id="select-all-machines" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Configuration: </th>
+        <td id="selectors_config">
+            <a id="select-all-configs" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Metric: </th>
+        <td id="selectors_run">
+            <a class="selector" id="selector-metric-cold">Cold Run</a>
+            <a class="selector" id="selector-metric-hot">Hot Run</a>
+            <a class="selector" id="selector-metric-size">Storage Size</a>
+        </td>
+    </tr>
+</table>
+
+<table class="stick-left comparison">
+    <thead>
+        <tr>
+            <th class="summary-name">
+                System &amp; Machine
+            </th>
+            <th colspan="2">
+                Relative <span id="time-or-size">time</span> (lower is better)
+            </th>
+        </tr>
+    </thead>
+    <tbody id="summary">
+    </tbody>
+</table>
+
+<div id="nothing-selected" class="stick-left">Nothing selected</div>
+
+<div class="stick-left comparison">
+    <h2>Detailed Comparison</h2>
+</div>
+
+<table id="details">
+    <thead>
+        <tr id="details_head">
+        </tr>
+    </thead>
+    <tbody id="details_body">
+    </tbody>
+</table>
+
+<script type="text/javascript">
+
+const constant_time_add = 0.01;
+const missing_result_penalty = 2;
+const missing_result_time = 300;
+
+let selectors = {
+    "system": {},
+    "type": {},
+    "machine": {},
+    "config": {},
+    "metric": "hot",
+    "queries": [],
+};
+
+let theme = 'light';
+
+function setTheme(new_theme) {
+    theme = new_theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    window.localStorage.setItem('theme', theme);
+    render();
+}
+
+document.getElementById('toggle-light').addEventListener('click', e => setTheme('light'));
+document.getElementById('toggle-dark').addEventListener('click', e => setTheme('dark'));
+
+let new_theme = window.localStorage.getItem('theme');
+if (new_theme && new_theme != theme) {
+    setTheme(new_theme);
+}
+
+/// Generate selectors
+
+let systems = document.getElementById('selectors_system');
+let types = document.getElementById('selectors_type');
+let machines = document.getElementById('selectors_machine');
+let configs = document.getElementById('selectors_config');
+
+let unique_systems = [... new Set(data.map(elem => elem.system))];
+
+function toggle(e, elem, selectors_map) {
+    selectors_map[elem] = !selectors_map[elem];
+    e.target.className = selectors_map[elem] ? 'selector selector-active' : 'selector';
+    render();
+    updateHistory();
+}
+
+function toggleAll(e, selectors_map) {
+    const new_value = Object.keys(selectors_map).filter(k => selectors_map[k]).length * 2 < Object.keys(selectors_map).length;
+    [...e.target.parentElement.querySelectorAll('a')].map(
+        elem => { elem.className = new_value ? 'selector selector-active' : 'selector' });
+
+    Object.keys(selectors_map).map(k => { selectors_map[k] = new_value });
+    render();
+    updateHistory();
+}
+
+unique_systems.map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    systems.appendChild(selector);
+    if (!(elem in selectors.system)) { selectors.system[elem] = data.some(entry => entry.system == elem && !entry.hide); }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.system));
+
+    /// Highlighting summary rows and table columns on hovering over the system selector.
+    selector.addEventListener('mouseover', e => {
+        [...document.querySelectorAll('.summary-row')].map(row => {
+            row.className = row.dataset.system == elem ? 'summary-row summary-row-hilite' : 'summary-row' });
+        [...document.querySelectorAll('.th-entry')].map(th => {
+            th.className = th.dataset.system == elem ? 'th-entry th-entry-hilite' : 'th-entry' });
+    });
+    selector.addEventListener('mouseout', e => {
+        [...document.querySelectorAll('.summary-row')].map(row => { row.className = 'summary-row' });
+        [...document.querySelectorAll('.th-entry')].map(row => { row.className = 'th-entry' });
+    });
+});
+
+[... new Set(data.map(elem => elem.tags).flat())].map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    types.appendChild(selector);
+    if (!(elem in selectors.type)) { selectors.type[elem] = true; }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.type));
+});
+
+[... new Set(data.map(elem => elem.machine))].map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    machines.appendChild(selector);
+    if (!(elem in selectors.machine)) { selectors.machine[elem] = true; }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.machine));
+});
+
+[... new Set(data.map(elem => elem.config))].sort(
+    (a, b) => ((typeof(b) === 'number') - (typeof(a) === 'number')) || (a - b)).map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    configs.appendChild(selector);
+    if (!(elem in selectors.config)) { selectors.config[elem] = true; }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.config));
+});
+
+document.getElementById('select-all-systems').addEventListener('click', e => toggleAll(e, selectors.system));
+document.getElementById('select-all-types').addEventListener('click', e => toggleAll(e, selectors.type));
+document.getElementById('select-all-machines').addEventListener('click', e => toggleAll(e, selectors.machine));
+document.getElementById('select-all-configs').addEventListener('click', e => toggleAll(e, selectors.config));
+
+[...document.getElementById('selectors_run').querySelectorAll('a')].map(elem => elem.addEventListener('click', e => {
+    [...e.target.parentElement.querySelectorAll('a')].map(elem => { elem.className = elem == e.target ? 'selector selector-active' : 'selector' });
+}));
+
+document.getElementById('selector-metric-cold').addEventListener('click', e => { selectors.metric = 'cold'; render(); updateHistory(); });
+document.getElementById('selector-metric-hot').addEventListener('click', e => { selectors.metric = 'hot'; render(); updateHistory(); });
+document.getElementById('selector-metric-size').addEventListener('click', e => { selectors.metric = 'size'; render(); updateHistory(); });
+
+selectors.queries = [...data[0].result.keys()].map(k => true);
+
+function updateSelectors() {
+    [...systems.childNodes].map(elem => { elem.className = selectors.system[elem.innerText] ? 'selector selector-active' : 'selector' });
+    [...types.childNodes].map(elem => { elem.className = selectors.type[elem.innerText] ? 'selector selector-active' : 'selector' });
+    [...machines.childNodes].map(elem => { elem.className = selectors.machine[elem.innerText] ? 'selector selector-active' : 'selector' });
+    [...configs.childNodes].map(elem => { elem.className = selectors.config[elem.innerText] ? 'selector selector-active' : 'selector' });
+
+    [...document.getElementById('selectors_run').querySelectorAll('a')].map(elem => {
+        elem.className = elem.id == 'selector-metric-' + selectors.metric ? 'selector selector-active' : 'selector' });
+
+    [...document.querySelectorAll('.query-checkbox')].map((elem, i) => { elem.checked = selectors.queries[i] });
+}
+
+function clearElement(elem)
+{
+    while (elem.firstChild) {
+        elem.removeChild(elem.lastChild);
+    }
+}
+
+function selectRun(timings) {
+    return selectors.metric == 'cold' ? timings[0] : (timings.some(timing => timing !== null) ? Math.min(...timings.slice(1).filter(timing => timing !== null)) : null)
+}
+
+function addNote(text) {
+    let note = document.createElement('sup');
+    note.className = 'note';
+    note.appendChild(document.createTextNode('†'));
+
+    let tooltip = document.createElement('span');
+    tooltip.className = 'tooltip tooltip-result';
+    tooltip.appendChild(document.createTextNode(text));
+
+    note.appendChild(tooltip);
+    return note;
+}
+
+function renderSummary(filtered_data) {
+    let table = document.getElementById('summary');
+    clearElement(table);
+
+    /// Generate summary
+
+    /// The algorithm: for each of the queries,
+    /// - if there is a result - take query duration, add 10 ms, and divide it to the corresponding value from the baseline,
+    /// - if there is no result - take the worse query duration across all query runs for this system and multiply by 2.
+    /// Take geometric mean across the queries.
+
+    let summary = {};
+
+    const num_queries = filtered_data[0].result.length;
+
+    const baseline_data = [...filtered_data[0].result.keys()].map(query_num =>
+        [...Array(5).keys()].map(run_num =>
+            Math.min(...filtered_data.filter(elem => !elem.fake).map(elem => elem.result[query_num][run_num]).filter(x => x))));
+
+    const min_data_size = Math.min(...filtered_data.map(elem => elem.data_size).filter(x => x));
+
+    let summaries;
+    if (selectors.metric == 'size') {
+        summaries = filtered_data.map(elem => elem.data_size / min_data_size);
+        document.getElementById('time-or-size').innerText = 'size';
+    } else {
+        summaries = filtered_data.map(elem => {
+            const fallback_timing = missing_result_penalty * Math.max(missing_result_time, ...elem.result.map(timings => selectRun(timings)));
+
+            let accumulator = 0;
+            let used_queries = 0;
+
+            const no_queries_selected = selectors.queries.filter(x => x).length == 0;
+
+            for (let i = 0; i < num_queries; ++i) {
+                if (no_queries_selected || selectors.queries[i]) {
+                    const curr_timing = selectRun(elem.result[i]) ?? fallback_timing;
+                    const baseline_timing = selectRun(baseline_data[i]);
+                    const ratio = (constant_time_add + curr_timing) / (constant_time_add + baseline_timing);
+                    accumulator += Math.log(ratio);
+                    ++used_queries;
+                }
+            }
+
+            return Math.exp(accumulator / used_queries);
+        });
+        document.getElementById('time-or-size').innerText = 'time';
+    }
+
+    const sorted_indices = [...summaries.keys()].sort((a, b) => summaries[a] - summaries[b]);
+    const max_ratio = summaries[sorted_indices[sorted_indices.length - 1]];
+
+    sorted_indices.map(idx => {
+        const elem = filtered_data[idx];
+
+        if (selectors.metric == 'size' && elem.data_size === null) { return; }
+
+        let tr = document.createElement('tr');
+        tr.className = 'summary-row';
+
+        tr.dataset.system = elem.system;
+
+        let td_name = document.createElement('td');
+        td_name.className = 'summary-name';
+
+        if (!elem.fake) {
+            let link = document.createElement('a');
+            link.appendChild(document.createTextNode(`${elem.system} (${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine} - ${elem.config})`));
+            link.href = "https://github.com/ClickHouse/clickhouse_vs_snowflake/blob/main/" + elem.source;
+            td_name.appendChild(link);
+        } else {
+            td_name.appendChild(document.createTextNode(elem.system));
+        }
+
+        if (elem.comment) { td_name.appendChild(addNote(elem.comment)); }
+        td_name.appendChild(document.createTextNode(': '));
+
+        const ratio = summaries[idx];
+        const percentage = summaries[idx] / max_ratio * 100;
+
+        let td_number = document.createElement('td');
+        td_number.className = 'summary-number';
+
+        const text = selectors.metric == 'size' ? `${(elem.data_size / 1024 / 1024 / 1024).toFixed(2)} GiB (×${ratio.toFixed(2)})`
+            : `×${ratio.toFixed(2)}`;
+
+        td_number.appendChild(document.createTextNode(text));
+
+        let td_bar = document.createElement('td');
+        td_bar.className = 'summary-bar-cell';
+
+        let bar = document.createElement('div');
+
+        bar.className = `summary-bar`;
+        bar.style.width = `${percentage}%`;
+
+        td_bar.appendChild(bar);
+
+        tr.appendChild(td_name);
+        tr.appendChild(td_bar);
+        tr.appendChild(td_number);
+        table.appendChild(tr);
+    });
+
+    return [sorted_indices, baseline_data];
+}
+
+function colorize(elem, ratio) {
+    let [r, g, b] = [0, 0, 0];
+
+    /// ratio less than 1 - green
+    /// ratio from 1 to 2 - green to yellow
+    /// ratio from 2 to 10 - yellow to red
+    /// ratio from 10 to 1000 to infinity - red to brown to black
+
+    /// Note: we are using RGB space without proper gamma correction. Read more: https://www.handprint.com/HP/WCL/color1.html
+
+    if (ratio !== null) {
+        if (ratio < 1) {
+            r = 232;
+            g = 255;
+            b = 232;
+        } else if (ratio <= 1) {
+            g = 255;
+        } else if (ratio <= 2) {
+            g = 255;
+            r = (ratio - 1) * 255;
+        } else if (ratio <= 10) {
+            g = (10 - ratio) / 8 * 255;
+            r = 255;
+        } else {
+            r = (1 - ((ratio - 10) / ((ratio - 10) + 1000))) * 255;
+        }
+    }
+
+    if (document.documentElement.getAttribute('data-theme') == 'dark') {
+        r /= 1.5;
+        g /= 1.5;
+        b /= 1.5;
+    }
+
+    elem.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+    if (ratio === null || ratio > 10) {
+        /// This will look better on dark backgrounds
+        elem.style.color = 'white';
+    } else {
+        elem.style.color = 'black';
+    }
+
+    /// The best result is highlighted
+    if (ratio == 1) {
+        elem.style.fontWeight = 'bold';
+    }
+}
+
+function render() {
+    let details_head = document.getElementById('details_head');
+    let details_body = document.getElementById('details_body');
+
+    clearElement(details_head);
+    clearElement(details_body);
+
+    let filtered_data = data.filter(elem =>
+        selectors.system[elem.system] &&
+        selectors.machine[elem.machine] &&
+        selectors.config[elem.config] &&
+        elem.tags.filter(type => selectors.type[type]).length > 0);
+
+    let nothing_selected_elem = document.getElementById('nothing-selected');
+    if (filtered_data.length == 0) {
+        nothing_selected_elem.style.display = 'block';
+        [...document.querySelectorAll('.comparison')].map(e => e.style.display = 'none');
+        return;
+    }
+    nothing_selected_elem.style.display = 'none';
+    [...document.querySelectorAll('.comparison')].map(e => e.style.display = 'block');
+
+    if (selectors.metric == 'size') {
+        filtered_data = [...filtered_data];
+    }
+
+    let [sorted_indices, baseline_data] = renderSummary(filtered_data);
+    sorted_indices = sorted_indices.filter(idx => !filtered_data[idx].fake);
+
+    /// Generate details
+
+    /// Global checkbox
+    {
+        let th_checkbox = document.createElement('th');
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        checkbox.addEventListener('change', e => {
+            [...document.querySelectorAll('.query-checkbox')].map(elem => { elem.checked = e.target.checked });
+            selectors.queries.map((_, i) => { selectors.queries[i] = e.target.checked });
+            renderSummary(filtered_data);
+            updateHistory();
+        });
+        th_checkbox.appendChild(checkbox);
+        details_head.appendChild(th_checkbox);
+        details_head.appendChild(document.createElement('th'));
+    }
+
+    /// Table header
+    sorted_indices.map(idx => {
+        const elem = filtered_data[idx];
+        let th = document.createElement('th');
+        th.appendChild(document.createTextNode(`${elem.system}\n(${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine} - \n ${elem.config})`));
+        th.className = 'th-entry';
+        th.dataset.system = elem.system;
+        details_head.appendChild(th);
+    });
+
+
+
+    /// Data sizes
+    {
+        let tr = document.createElement('tr');
+        tr.className = 'shadow';
+
+        let td_title = document.createElement('td');
+        td_title.colSpan = 2;
+        td_title.appendChild(document.createTextNode('Data size: '));
+        tr.appendChild(td_title);
+
+        sorted_indices.map(idx => {
+            const curr_size = filtered_data[idx].data_size;
+            const baseline_size = Math.min(...filtered_data.map(elem => elem.data_size).filter(x => x));
+            const ratio = curr_size !== null ? curr_size / baseline_size : null;
+
+            let td = document.createElement('td');
+            td.appendChild(document.createTextNode(curr_size !== null ? `${(curr_size / 1024 / 1024 / 1024).toFixed(2)} GiB (×${ratio.toFixed(2)})` : '☠'));
+
+            colorize(td, ratio);
+            tr.appendChild(td);
+        });
+
+        details_body.appendChild(tr);
+    }
+
+    /// Query runtimes
+    const num_queries = filtered_data[0].result.length;
+
+    for (let query_num = 0; query_num < num_queries; ++query_num) {
+        let tr = document.createElement('tr');
+        tr.className = 'shadow';
+
+        let td_checkbox = document.createElement('td');
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'query-checkbox';
+        checkbox.checked = selectors.queries[query_num];
+        checkbox.addEventListener('change', e => {
+            selectors.queries[query_num] = e.target.checked;
+            renderSummary(filtered_data);
+            updateHistory();
+        });
+        td_checkbox.appendChild(checkbox);
+        tr.appendChild(td_checkbox);
+
+        let td_query_num = document.createElement('td');
+        td_query_num.className = 'note';
+        td_query_num.appendChild(document.createTextNode(`Q${query_num}. `));
+
+        let tooltip = document.createElement('span');
+        tooltip.className = 'tooltip tooltip-query';
+        tooltip.appendChild(document.createTextNode(`Query ${query_num}: ${queries[query_num]}`));
+        td_query_num.appendChild(tooltip);
+
+        tr.appendChild(td_query_num);
+
+        sorted_indices.map(idx => {
+            const curr_timing = selectRun(filtered_data[idx].result[query_num]);
+            const baseline_timing = selectRun(baseline_data[query_num]);
+            const ratio = curr_timing !== null ? (constant_time_add + curr_timing) / (constant_time_add + baseline_timing) : null;
+
+            let td = document.createElement('td');
+            td.appendChild(document.createTextNode(curr_timing !== null ? `${curr_timing.toFixed(2)}s (×${ratio.toFixed(2)})` : '☠'));
+
+            colorize(td, ratio);
+            tr.appendChild(td);
+        });
+
+        details_body.appendChild(tr);
+    }
+}
+
+function updateHistory() {
+    history.pushState(selectors, '',
+        window.location.pathname + (window.location.search || '') + '#' + btoa(JSON.stringify(selectors)));
+}
+
+window.onpopstate = function(event) {
+    if (!event.state) { return; }
+    selectors = event.state;
+    render();
+    updateSelectors();
+};
+
+if (window.location.hash) {
+    try {
+        selectors = JSON.parse(atob(window.location.hash.substring(1)));
+    } catch {}
+}
+
+render();
+updateSelectors();
+
+</script>
+</body>
+</html>

@@ -86,15 +86,22 @@ Queries consist of 6 different query types, each in their own folder, aimed to t
 
 #### Downloads per day
 
-Aims to test rendering of a line chart showing downloads for a project over time. A time filter is in turn applied. This is 2-step query process is repeated for a set of projects.
+Aims to test rendering of a line chart showing downloads for a project over time. A time filter is in turn applied. This 2-step query process is repeated for a set of projects.
 
 More [here](./downloads_per_day/README.md)
 
 #### Downloads per day by python version
 
+Aims to test rendering and filtering of a multi-series line chart showing downloads for a project over time. A time filter is in turn applied. This 2-step query process is repeated for a set of projects.
+
+More [here](./downloads_per_day_by_python_version/README.md)
 
 #### Downloads per day by system
 
+Aims to test rendering and filtering of a multi-series line chart showing systems for a project over time. Similar to Downloads per day by python version but system is higher cardinality. 
+This requires (makes multi-series line chart usable) a sub-query to limit to the top 10 systems for the project.
+
+More [here](./downloads_per_day_by_system/README.md)
 
 #### Top file types per project
 
@@ -103,6 +110,10 @@ More [here](./downloads_per_day/README.md)
 
 
 #### Top sub projects
+
+Aims to test rendering and filtering of a pie chart showing sub-projects over time. Sub-projects are those that are related to a core technology e.g. `mysql`. These are identified by using `project ILIKE %<term>%`, where `<term`> is selected from a list. 
+
+More [here](./top_sub_projects/README.md)
 
 ## Running tests
 

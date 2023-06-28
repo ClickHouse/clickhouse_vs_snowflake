@@ -1,7 +1,8 @@
 
 # Top Sub Projects
 
-- Aims to test rendering and filtering of a pie chart showing sub-projects over time. Sub-projects are those that are related to a core technology e.g. `mysql`. These are identified by using `project ILIKE %<term>%`, where `<term`> is selected from a list. This list is identified by taking the top 20 prefixes of names with `-` in their name i.e.
+- Aims to test rendering and filtering of a pie chart showing sub-projects over time. 
+- Sub-projects are those that are related to a core technology e.g. `mysql`. These are identified by using `project ILIKE %<term>%`, where `<term`> is selected from a list. This list is identified by taking the top 20 prefixes of names with `-` in their name i.e.
 
 ```sql
 SELECT splitByChar('-', project)[1] as base from pypi GROUP BY base ORDER BY count() DESC LIMIT 100
@@ -18,13 +19,53 @@ We have extended this list of 20 with `mysql`, `postgres`, `snowflake`, `elastic
 ## ClickHouse
 
 ```sql
+-- find downloads for projects like `google` in last 90 days
+SELECT
+    project,
+    count() AS c
+FROM pypi
+WHERE (project ILIKE '%google%') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90)))
+GROUP BY project
+ORDER BY c DESC
+LIMIT 10
 
+-- filter to random time range
+SELECT
+    project,
+    count() AS c
+FROM pypi
+WHERE (project ILIKE '%google%') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(35))) AND 
+      (date <= (CAST('2023-06-23', 'Date') - toIntervalDay(15))) AND 
+      (timestamp >= (CAST('2023-06-23 08:33:59', 'DateTime') - toIntervalDay(35))) AND 
+      (timestamp <= (CAST('2023-06-23 08:33:59', 'DateTime') - toIntervalDay(15)))
+GROUP BY project
+ORDER BY c DESC
+LIMIT 10
 ```
 
 ## Snowflake
 
 ```sql
+-- find downloads for projects like `google` in last 90 days
+SELECT project,
+       count(*) c
+FROM pypi
+WHERE project ILIKE '%google%'
+  AND (timestamp >= DATEADD(days, -90, '2023-06-23'::Date))
+GROUP BY project
+ORDER BY c DESC
+LIMIT 10;
 
+-- filter to random time range
+SELECT project,
+       count(*) c
+FROM pypi
+WHERE project ILIKE '%google%'
+  AND (timestamp >= DATEADD(days, -35, '2023-06-23 08:33:59'::DateTime))
+  AND timestamp <= DATEADD(days, -15, '2023-06-23 08:33:59'::DateTime)
+GROUP BY project
+ORDER BY c DESC
+LIMIT 10;
 ```
 
 ## Test configurations
