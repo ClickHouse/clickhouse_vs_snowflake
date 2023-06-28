@@ -1,5 +1,5 @@
 
-# Overview
+# Downloads per day by System
 
 - Aims to test rendering and filtering of a multi-series line chart showing systems for a project over time. Similar to [Downloads per day by Python version](../downloads_per_day_by_python_version) but system is higher cardinality.
 - This test aggregates downloads by day for the last 90 days, grouping by system and filtering by a project. The higher cardinality of system requires us to filter by the top 10 values for each project - this is achieved though a sub-query. 
@@ -19,7 +19,7 @@ SELECT
     system.name AS system,
     count() AS count
 FROM pypi
-WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'DateTime') - toIntervalDay(90))) AND (system IN (
+WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90))) AND (timestamp >= (CAST('2023-06-23 08:33:59', 'DateTime') - toIntervalDay(90))) AND (system IN (
     SELECT system.name AS system
     FROM pypi
     WHERE (system != '') AND (project = 'boto3')

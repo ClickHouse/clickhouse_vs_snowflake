@@ -11,11 +11,11 @@ def downloads_per_day(projects, max_datetime, max_date):
             lower_n_days = 90
             click_queries_file.write(
                 f"SELECT toStartOfDay(date), count() as count FROM pypi WHERE project = '{project}' "
-                f"AND date >= '{max_date}'::DateTime - toIntervalDay({lower_n_days}) GROUP BY date "
+                f"AND date >= '{max_date}'::Date - toIntervalDay({lower_n_days}) GROUP BY date "
                 f"ORDER BY date ASC;\n")
             snow_queries_file.write(
                 f"SELECT DATE_TRUNC('DAY',timestamp) AS day, count(*) AS count FROM pypi WHERE (project = '{project}') "
-                f"AND (timestamp > DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) GROUP BY day ORDER BY day ASC;\n")
+                f"AND (timestamp >= DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) GROUP BY day ORDER BY day ASC;\n")
             lower_n_days = random.randint(1, 90)
             upper_n_days = random.randint(0, lower_n_days - 1)
             difference_secs = (lower_n_days - upper_n_days) * 86400
@@ -43,12 +43,12 @@ def downloads_per_day_by_python_version(projects, max_datetime, max_date):
             upper_n_days = 0
             click_queries_file.write(f"SELECT date as day, splitByChar('.', python)[1] || '.' || "
                                      f"splitByChar('.', python)[2] as major, count() AS count FROM pypi "
-                                     f"WHERE python != '' AND (project = '{project}') AND date >= '{max_date}'::DateTime - "
+                                     f"WHERE python != '' AND (project = '{project}') AND date >= '{max_date}'::Date - "
                                      f"toIntervalDay({lower_n_days}) GROUP BY day, major ORDER BY day ASC, major ASC\n")
             snow_queries_file.write(
                 f"SELECT DATE_TRUNC('DAY',timestamp) AS day, SPLIT(python, '.')[0] || '.' || SPLIT(python, '.')[1] as major, "
                 f"count(*) AS count FROM pypi WHERE python != '' AND (project = '{project}') AND "
-                f"(timestamp > DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) GROUP BY day, major ORDER BY day ASC, major ASC;\n")
+                f"(timestamp >= DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) GROUP BY day, major ORDER BY day ASC, major ASC;\n")
             lower_n_days = random.randint(1, 90)
             upper_n_days = random.randint(0, lower_n_days - 1)
             difference_secs = (lower_n_days - upper_n_days) * 86400
@@ -77,7 +77,7 @@ def downloads_per_day_by_system(projects, max_datetime, max_date):
         for project in projects:
             lower_n_days = 90
             click_queries_file.write(f"SELECT date as day, system.name as system, count() AS count FROM pypi "
-                                     f"WHERE (project = '{project}') AND (date >= '{max_date}'::DateTime - "
+                                     f"WHERE (project = '{project}') AND (date >= '{max_date}'::Date - "
                                      f"toIntervalDay({lower_n_days})) AND system IN ( SELECT system.name as system FROM pypi "
                                      f"WHERE system != '' AND project = '{project}' GROUP BY system ORDER BY count() DESC LIMIT 10) "
                                      f"GROUP BY day, system ORDER BY day ASC, count DESC;\n")
@@ -109,30 +109,27 @@ def downloads_per_day_by_system(projects, max_datetime, max_date):
                 f"count(*) DESC LIMIT 10) GROUP BY period, system_name ORDER BY period, c DESC;\n")
 
 
-def top_file_type_per_project(projects, max_datetime, max_date):
+def top_file_type_per_project(projects, max_date):
     with open('top_file_type_per_project/clickhouse_queries.sql', 'w') as click_queries_file, \
             open('top_file_type_per_project/snowflake_queries.sql', 'w') as snow_queries_file:
         for project in projects:
             lower_n_days = 90
             upper_n_days = 0
             click_queries_file.write(f"SELECT file.type, count() as c FROM pypi WHERE project = '{project}' "
-                                     f"AND (date >= '{max_date}'::DateTime - toIntervalDay({lower_n_days})) "
+                                     f"AND (date >= '{max_date}'::Date - toIntervalDay({lower_n_days})) "
                                      f"GROUP BY file.type ORDER BY c DESC LIMIT 10;\n")
             snow_queries_file.write(f"SELECT file['type'], count(*) as c FROM pypi WHERE project = '{project}' "
                                     f"AND (timestamp >= DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) "
                                     f"GROUP BY file['type'] ORDER BY c DESC LIMIT 10;\n")
             lower_n_days = random.randint(1, 90)
             upper_n_days = random.randint(0, lower_n_days - 1)
-            difference_secs = (lower_n_days - upper_n_days) * 86400
             click_queries_file.write(f"SELECT file.type, count() as c FROM pypi WHERE project = '{project}' "
                                      f"AND date >= '{max_date}'::Date - toIntervalDay({lower_n_days}) "
-                                     f"AND date <= '{max_date}'::Date - toIntervalDay({upper_n_days}) AND "
-                                     f"timestamp >= '{max_datetime}'::DateTime - toIntervalDay({lower_n_days}) "
-                                     f"AND timestamp  <= '{max_datetime}'::DateTime - toIntervalDay({upper_n_days}) "
+                                     f"AND date <= '{max_date}'::Date - toIntervalDay({upper_n_days}) "
                                      f"GROUP BY file.type ORDER BY c DESC LIMIT 10;\n")
             snow_queries_file.write(f"SELECT file['type'], count(*) as c FROM pypi WHERE project = '{project}' "
-                                    f"AND (timestamp >= DATEADD(days, -{lower_n_days}, '{max_datetime}'::DateTime)) "
-                                    f"AND timestamp <= DATEADD(days, -{upper_n_days}, '{max_datetime}'::DateTime) "
+                                    f"AND (timestamp::Date >= DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) "
+                                    f"AND timestamp:Date <= DATEADD(days, -{upper_n_days}, '{max_date}'::Date) "
                                     f"GROUP BY file['type'] ORDER BY c DESC LIMIT 10;\n")
 
 
@@ -141,16 +138,14 @@ def top_projects_by_distro(distros, max_datetime, max_date):
             open('top_projects_by_distro/snowflake_queries.sql', 'w') as snow_queries_file:
         for distro in distros:
             lower_n_days = 90
-            upper_n_days = 0
             click_queries_file.write(f"SELECT project, count() as c FROM pypi WHERE distro.name = '{distro}' "
-                                     f"AND (date >= '{max_date}'::DateTime - toIntervalDay({lower_n_days})) "
+                                     f"AND (date >= '{max_date}'::Date - toIntervalDay({lower_n_days})) "
                                      f"GROUP BY project ORDER BY c DESC LIMIT 10;\n")
             snow_queries_file.write(f"SELECT project, count(*) as c FROM pypi WHERE distro['name'] = '{distro}' "
                                     f"AND (timestamp >= DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) "
                                     f"GROUP BY project ORDER BY c DESC LIMIT 10;\n")
             lower_n_days = random.randint(1, 90)
             upper_n_days = random.randint(0, lower_n_days - 1)
-            difference_secs = (lower_n_days - upper_n_days) * 86400
             click_queries_file.write(f"SELECT project, count() as c FROM pypi WHERE distro.name = '{distro}' "
                                      f"AND date >= '{max_date}'::Date - toIntervalDay({lower_n_days}) "
                                      f"AND date <= '{max_date}'::Date - toIntervalDay({upper_n_days}) AND "
@@ -168,23 +163,22 @@ def top_sub_projects(base_projects, max_datetime, max_date):
             open('top_sub_projects/snowflake_queries.sql', 'w') as snow_queries_file:
         for base_project in base_projects:
             lower_n_days = 90
-            upper_n_days = 0
-            click_queries_file.write(f"select project, count() c FROM pypi WHERE project LIKE '%{base_project}%' "
-                                     f"AND date >= '{max_date}'::DateTime - toIntervalDay({lower_n_days}) GROUP BY project "
-                                     f"ORDER BY c DESC LIMIT 10;\n")
-            snow_queries_file.write(f"select project, count(*) c FROM pypi WHERE project LIKE '%{base_project}%' AND "
+            click_queries_file.write(f"select project, count() c FROM pypi WHERE project ILIKE '%{base_project}%' "
+                                     f"AND date >= '{max_date}'::Date - toIntervalDay({lower_n_days}) "
+                                     f"GROUP BY project ORDER BY c DESC LIMIT 10;\n")
+            snow_queries_file.write(f"select project, count(*) c FROM pypi WHERE project ILIKE '%{base_project}%' AND "
                                     f"(timestamp >= DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) "
                                     f"GROUP BY project ORDER BY c DESC LIMIT 10;\n")
             lower_n_days = random.randint(1, 90)
             upper_n_days = random.randint(0, lower_n_days - 1)
             difference_secs = (lower_n_days - upper_n_days) * 86400
-            click_queries_file.write(f"select project, count() c FROM pypi WHERE project LIKE '%{base_project}%' "
+            click_queries_file.write(f"select project, count() c FROM pypi WHERE project ILIKE '%{base_project}%' "
                                      f"AND date >= '{max_date}'::Date - toIntervalDay({lower_n_days}) AND "
                                      f"date  <= '{max_date}'::Date - toIntervalDay({upper_n_days}) AND "
                                      f"timestamp >= '{max_datetime}'::DateTime - toIntervalDay({lower_n_days}) "
                                      f"AND timestamp  <= '{max_datetime}'::DateTime - toIntervalDay({upper_n_days}) "
                                      f"GROUP BY project ORDER BY c DESC LIMIT 10;\n")
-            snow_queries_file.write(f"select project, count(*) c FROM pypi WHERE project LIKE '%{base_project}%'AND "
+            snow_queries_file.write(f"select project, count(*) c FROM pypi WHERE project ILIKE '%{base_project}%'AND "
                                     f"(timestamp >= DATEADD(days, -{lower_n_days}, '{max_datetime}'::DateTime)) "
                                     f"AND timestamp <= DATEADD(days, -{upper_n_days},  '{max_datetime}'::DateTime) "
                                     f"GROUP BY project  ORDER BY c DESC LIMIT 10;\n")
@@ -215,7 +209,7 @@ print('generating downloads per day by system')
 downloads_per_day_by_system(projects, max_datetime, max_date)
 # top file type per project
 print('generating top file type per project')
-top_file_type_per_project(projects, max_datetime, max_date)
+top_file_type_per_project(projects, max_date)
 print('generating top projects by distro')
 result = client.query(f"SELECT distro.name FROM pypi WHERE distro.name != '' GROUP BY distro.name "
                        f"ORDER BY count() DESC LIMIT {num_queries}")
@@ -225,6 +219,7 @@ top_projects_by_distro(distros, max_datetime, max_date)
 # top sub projects
 print('generating top sub projects')
 result = client.query(
-     f"SELECT splitByChar('-', project)[1] as base from pypi GROUP BY base ORDER BY count() DESC LIMIT {num_queries}")
+     f"SELECT splitByChar('-', project)[1] as base from pypi GROUP BY base ORDER BY count() DESC LIMIT 20")
 base_projects = [project[0] for project in result.result_rows]
+base_projects = base_projects + ['clickhouse', 'snowflake', 'mysql', 'elasticsearch', 'postgres']
 top_sub_projects(base_projects, max_datetime, max_date)

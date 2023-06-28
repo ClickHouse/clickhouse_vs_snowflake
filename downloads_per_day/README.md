@@ -16,7 +16,7 @@ SELECT
     toStartOfDay(date),
     count() AS count
 FROM pypi
-WHERE (project = 'typing-extensions') AND (date >= (CAST('2023-06-23', 'DateTime') - toIntervalDay(90)))
+WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90))) AND (timestamp >= (CAST('2023-06-23 08:33:59', 'DateTime') - toIntervalDay(90)))
 GROUP BY date
 ORDER BY date ASC
 

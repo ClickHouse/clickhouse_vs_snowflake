@@ -1,0 +1,37 @@
+
+# Top Sub Projects
+
+- Aims to test rendering and filtering of a pie chart showing sub-projects over time. Sub-projects are those that are related to a core technology e.g. `mysql`. These are identified by using `project ILIKE %<term>%`, where `<term`> is selected from a list. This list is identified by taking the top 20 prefixes of names with `-` in their name i.e.
+
+```sql
+SELECT splitByChar('-', project)[1] as base from pypi GROUP BY base ORDER BY count() DESC LIMIT 100
+```
+
+We have extended this list of 20 with `mysql`, `postgres`, `snowflake`, `elasticsearch` and `clickhouse`  for fun.
+
+- This test aggregates sub-projects for the last 90 days, sorting by number of downloads and filtering to a project term. 
+- A narrower time filter is then applied to a random time frame (same random values for both databases). This time filter is limited to a day granularity so we can exploit materialized views in ClickHouse and Snowflake.
+- This simulates a user viewing top sub-projects for a term over a time period, and then drilling down to a specific set of days.
+
+## Queries 
+
+## ClickHouse
+
+```sql
+
+```
+
+## Snowflake
+
+```sql
+
+```
+
+## Test configurations
+
+All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT = false;` unless stated. ClickHouse query cache is also disabled and file system cache dropped first.
+
+|      Test Config     |                                                                         ClickHouse                                                                        |                                       Snowflake                                       |
+|:--------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
+|        default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
+| date_project_cluster |                                                                             NA                                                                            | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
