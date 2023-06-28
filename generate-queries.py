@@ -212,7 +212,7 @@ print('generating top file type per project')
 top_file_type_per_project(projects, max_date)
 print('generating top projects by distro')
 result = client.query(f"SELECT distro.name FROM pypi WHERE distro.name != '' GROUP BY distro.name "
-                       f"ORDER BY count() DESC LIMIT {num_queries}")
+                       f"ORDER BY count() DESC LIMIT 20")
 distros = [distro[0] for distro in result.result_rows]
 # top projects by distro
 top_projects_by_distro(distros, max_datetime, max_date)

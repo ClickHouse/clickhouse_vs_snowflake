@@ -76,8 +76,68 @@ See specific sub folders for potential schema optimizations for each query type.
 
 ### Snowflake
 
-TODO - add database, add role, schema, warehouse setup
+```sql
+-- use account admin
+USE ROLE ACCOUNTADMIN;
+-- create database
+CREATE DATABASE PYPI
+-- transient tables as we don't need time travel
+create  TRANSIENT schema PYPI DATA_RETENTION_TIME_IN_DAYS = 0;
+-- connect to gcs
+CREATE STORAGE INTEGRATION gcs_int
+  TYPE = EXTERNAL_STAGE
+  STORAGE_PROVIDER = 'GCS'
+  ENABLED = TRUE
+  STORAGE_ALLOWED_LOCATIONS = ('gcs://clickhouse_public_datasets/');
+-- create staging area for test data
+create stage PYPI_STAGE_2023
+  url='gcs://clickhouse_public_datasets/pypi/file_downloads/2023'
+  storage_integration = gcs_int
+  file_format = my_pypi_format;
+-- create table (transient as no time travel needed)
+CREATE TRANSIENT TABLE PYPI (
+    timestamp TIMESTAMP,
+    country_code varchar,
+    url varchar,
+    project varchar,
+    file OBJECT,
+    installer OBJECT,
+    python varchar,
+    implementation OBJECT,
+    distro VARIANT,
+    system OBJECT,
+    cpu varchar,
+    openssl_version varchar,
+    setuptools_version varchar,
+    rustc_version varchar,
+    tls_protocol varchar,
+    tls_cipher varchar 
+) DATA_RETENTION_TIME_IN_DAYS = 0;
 
+-- use a warehouse - loading performance is linear so use as large as possible at no extra cost
+USE WAREHOUSE "<warehouse>";
+-- load data
+copy into PYPI from (select
+    to_timestamp($1:timestamp::varchar) as timestamp,
+    $1:country_code         as country_code,
+    $1:url            as url,
+    $1:project            as project,
+    $1:file            as file,
+        $1:installer            as installer,
+    $1:python             as python,
+    $1:implementation            as implementation,
+    $1:distro            as distro,
+    $1:system       as system,
+    $1:cpu            as cpu,
+    $1:openssl_version      as openssl_version,
+    $1:setuptools_version          as setuptools_version,
+
+    $1:rustc_version         as rustc_version,
+    $1:tls_protocol    as tls_protocol,
+    $1:tls_cipher     as tls_cipher
+    from @pypi_stage_2023)
+pattern= 'pypi/file_downloads/2023/.*'
+```
 
 ## Queries
 

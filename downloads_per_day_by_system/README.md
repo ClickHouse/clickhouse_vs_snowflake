@@ -127,7 +127,7 @@ ALTER TABLE pypi
     (
         SELECT
             project,
-            system.1 as system_name, -- doesn't work with system.name TODO: report to dev
+            system.1 as system_name, -- doesn't work with system.name - known issue
             count() as c
         GROUP BY project, system_name
     );
@@ -250,4 +250,16 @@ ORDER BY create_time DESC
 -- │ c-plum-rq-62-server-1 │       0 │ MATERIALIZE PROJECTION prj_count_by_project_system │ 2023-06-28 16:09:11 │
 -- └───────────────────────┴─────────┴────────────────────────────────────────────────────┴─────────────────────┘
 
+```
+
+### Snowflake
+
+#### mv_cnt_by_system
+
+Materialized view for speeding up the subquery. Conceptually similar to above ClickHouse optimization.
+
+```sql
+CREATE OR REPLACE MATERIALIZED VIEW cnt_by_system AS SELECT project, system['name'] as system_name, count(*) as count FROM PYPI.PYPI.PYPI GROUP BY project, system_name;
+
+ALTER MATERIALIZED VIEW cnt_by_system CLUSTER BY (project);
 ```
