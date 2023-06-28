@@ -110,12 +110,16 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 |  date_project_cluster |                                                                             NA                                                                            | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
 | prj_cnt_by_prj_system |                                                            Projection for speeding up the subquery                                                        |                                           TODO                                        |
 
+
 ## Optimizations
+
 ### ClickHouse
+
 #### prj_cnt_by_prj_system
+
 Projection for speeding up the subquery.
 
-POC-test:
+
 ```sql
 CREATE TABLE pypi_test1 AS pypi;
 INSERT INTO pypi_test1 SELECT * FROM pypi LIMIT 1_000_000;

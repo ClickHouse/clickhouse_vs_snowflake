@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ClickHouse vs Snowflake - Top Sub Projects</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="data:image/gif;base64,R0lGODlhIAAgAOMPAHMUEmkyHOcbF8UvJts/E3BeOih1YziiQmebLt2AFjeyQKqZKNWPjLybfPfcDP///yH5BAEKAA8ALAAAAAAgACAAAATg8MlJ6ws26z0EGcQmZgAhnN6oPg0wDA0zrGMTAADDxEJCZ4Gba8c4hX4Uw+XWeYGOyMdhgkuYrAToqIBQHBCIKQ6wcJhPyINarUBcyuYE+ndQeOsKuNlxmv3CdnZfew5yAlEPC12BhFhZiBJ2CI1GkBMHeoV9PpYPhIUDBqIFnZ8EBaKplqYMqaqIewl8A6iupFF7C1YCoaJqq4UOWQIBBmtTuIQmWWxekJQeYWuWcFYPfl+dLAELOxML2hIYDeEWt7flEufknTZB7+8NBeyINxjqDwU4QYg26BTu6KVTEQEAOw==">
+    <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --color: black;
+            --title-color: black;
+            --background-color: white;
+
+            --link-color: #08F;
+            --link-hover-color: #F40;
+
+            --selector-text-color: black;
+            --selector-active-text-color: black;
+            --selector-background-color: #EEE;
+            --selector-active-background-color: #FFCB80;
+            --selector-hover-text-color: black;
+            --selector-hover-background-color: #FDB;
+
+            --summary-every-other-row-color: #F8F8F8;
+            --highlight-color: #EEE;
+            --bar-color: #FFCB80;
+
+            --tooltip-text-color: white;
+            --tooltip-background-color: black;
+
+            --nothing-selected-color: #CCC;
+            --shadow-color: grey;
+        }
+
+        [data-theme="dark"] {
+            --color: #CCC;
+            --title-color: white;
+            --background-color: #04293A;
+
+            --link-color: #8CF;
+            --link-hover-color: #FFF;
+
+            --selector-text-color: white;
+            --selector-background-color: #444;
+            --selector-active-text-color: white;
+            --selector-active-background-color: #088;
+            --selector-hover-text-color: black;
+            --selector-hover-background-color: white;
+
+            --summary-every-other-row-color: #042e41;
+            --highlight-color: #064663;
+            --bar-color: #088;
+
+            --tooltip-text-color: white;
+            --tooltip-background-color: #444;
+
+            --nothing-selected-color: #666;
+            --shadow-color: black;
+        }
+
+        html, body {
+            color: var(--color);
+            background-color: var(--background-color);
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            overflow: auto;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            padding: 1% 3% 0 3%;
+        }
+
+        h1 {
+            color: var(--title-color);
+        }
+
+        table {
+             border-spacing: 1px;
+        }
+
+        .stick-left {
+            position: sticky;
+            left: 0px;
+        }
+
+        .selectors-container {
+            padding: 2rem 0 2rem 0;
+            user-select: none;
+        }
+
+        .selectors-container th {
+            text-align: left;
+            vertical-align: top;
+            white-space: nowrap;
+            padding-top: 0.5rem;
+            padding-right: 1rem;
+        }
+
+        .selector {
+            display: inline-block;
+            margin-left: 0.1rem;
+            padding: 0.2rem 0.5rem 0.2rem 0.5rem;
+            background: var(--selector-background-color);
+            color: var(--selector-text-color);
+            border: 0.2rem solid var(--background-color);
+            border-radius: 0.5rem;
+        }
+
+        .selector-active {
+            color: var(--selector-active-text-color);
+            background: var(--selector-active-background-color);
+        }
+
+        a, a:visited {
+            text-decoration: none;
+            color: var(--link-color);
+            cursor: pointer;
+        }
+
+        a:hover {
+            color: var(--link-hover-color);
+        }
+
+        .selector:hover {
+            color: var(--selector-hover-text-color) !important;
+            background: var(--selector-background-color);
+        }
+
+        .selector-active:hover {
+            background: var(--selector-hover-background-color);
+        }
+
+        #summary tr:nth-child(odd) {
+            background: var(--summary-every-other-row-color);
+        }
+
+        .summary-name {
+            white-space: nowrap;
+            text-align: right;
+            padding-right: 1rem;
+        }
+
+        .summary-bar-cell {
+            width: 100%;
+        }
+
+        .summary-bar {
+            height: 1rem;
+            background: var(--bar-color);
+            border-radius: 0 0.2rem 0.2rem 0;
+        }
+
+        .summary-number {
+            font-family: monospace;
+            text-align: right;
+            padding-left: 1rem;
+            white-space: nowrap;
+        }
+
+        th {
+            padding-bottom: 0.5rem;
+        }
+
+        .th-entry-hilite {
+            background: var(--highlight-color);
+            font-weight: bold;
+        }
+
+        .summary-row:hover, .summary-row-hilite {
+            background: var(--highlight-color) !important;
+            font-weight: bold;
+        }
+
+        #details {
+            padding-bottom: 1rem;
+        }
+
+        #details th {
+            vertical-align: bottom;
+            white-space: pre;
+        }
+
+        #details td {
+            white-space: pre;
+            font-family: monospace;
+            text-align: right;
+            padding: 0.1rem 0.5rem 0.1rem 0.5rem;
+        }
+
+        .shadow:hover {
+            box-shadow: 0 0 1rem var(--shadow-color);
+            position: relative;
+        }
+
+        #nothing-selected {
+            display: none;
+            font-size: 32pt;
+            font-weight: bold;
+            color: var(--nothing-selected-color);
+        }
+
+        .note {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: calc(100% + 0.5rem);
+            visibility: hidden;
+            background-color: var(--tooltip-background-color);
+            color: var(--tooltip-text-color);
+            box-shadow: 0 0 1rem var(--shadow-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.5rem;
+            z-index: 1;
+            text-align: left;
+            white-space: normal;
+        }
+
+        .tooltip-result {
+            left: calc(50% - 0.25rem);
+            width: 20rem;
+            margin-left: -10rem;
+        }
+
+        .tooltip-query {
+            left: 0;
+            width: 40rem;
+            margin-left: -3rem;
+        }
+
+        .note:hover .tooltip {
+            visibility: visible;
+        }
+
+        .tooltip::after {
+            content: " ";
+            position: absolute;
+            top: 100%;
+            border-width: 0.5rem;
+            border-style: solid;
+            border-color: var(--tooltip-background-color) transparent transparent transparent;
+        }
+
+        .tooltip-result::after {
+            left: 50%;
+            margin-left: -1rem;
+        }
+
+        .tooltip-query::after {
+            left: 3rem;
+            margin-left: 0.5rem;
+        }
+
+        .nowrap {
+            text-wrap: none;
+        }
+
+        .themes {
+            float: right;
+            font-size: 200%;
+            cursor: pointer;
+        }
+
+        #toggle-dark, #toggle-light {
+            padding-right: 0.5rem;
+            cursor: pointer;
+        }
+
+        #toggle-dark:hover, #toggle-light:hover {
+            display: inline-block;
+            transform: translate(1px, 1px);
+            filter: brightness(125%);
+        }
+    </style>
+    <script type="text/javascript">
+
+const data = [
+{"system":"ClickHouse","date":"2023-06-28","machine":"720_GB","config":"bloom_filter","comment":"","tags":["Cloud"],"data_size":991638026556,"result":[[6.858,7.759,4.427],[27.043,1.839,1.809],[6.756,4.222,4.232],[26.758,39.44,2.819],[3.498,3.772,3.323],[12.235,1.587,12.961],[9.352,3.702,3.062],[12.593,16.46,10.342],[6.185,4.832,4.197],[46.472,1.278,1.304],[2.373,2.42,2.512],[2.246,1.652,1.482],[2.93,2.921,2.721],[6.05,5.333,2.415],[2.694,2.584,2.52],[10.84,1.364,13.327],[2.817,2.523,2.503],[1.852,1.12,1.228],[2.617,2.594,2.701],[12.807,8.967,1.443],[2.501,2.667,2.828],[1.72,2.529,1.547],[2.561,2.363,2.176],[8.704,4.794,1.324],[2.21,2.287,2.441],[1.78,1.811,1.027],[2.272,2.49,2.282],[3.93,1.911,3.469],[33.996,41.465,33.817],[35.491,29.357,32.356],[2.302,2.117,2.335],[2.323,1.394,1.366],[2.344,2.265,2.198],[1.591,1.38,0.636],[2.401,2.067,2.213],[1.498,1.644,1.946],[2.398,2.333,2.222],[2.157,1.416,1.475],[2.544,2.247,2.398],[17.849,1.726,1.821],[1.798,1.816,1.769],[3.941,1.783,1.765],[1.938,1.806,1.871],[4.517,1.321,1.285],[1.986,1.917,1.937],[6.452,8.21,0.885],[1.784,1.766,1.75],[3.783,2.975,0.683],[1.744,1.719,1.71],[2.928,2.074,1.8]],"source":"top_sub_projects/results/clickhouse_720_GB_bloom_filter.json"}
+,{"system":"ClickHouse","date":"2023-06-28","machine":"720_GB","config":"default","comment":"","tags":["Cloud"],"data_size":991638026556,"result":[[62.573,55.511,70.575],[33.309,33.612,16.341],[66.988,67.324,67.906],[70.527,60.232,48.756],[51.585,50.993,51.022],[18.121,17.675,16.678],[61.672,61.907,62.345],[9.298,4.098,9.313],[48.92,49.045,50.243],[34.192,43.842,5.396],[61.159,63.633,65.034],[6.307,5.917,6.064],[57.665,56.669,58.406],[36.655,35.422,36.238],[50.017,48.339,49.58],[15.564,15.197,13.873],[45.726,45.954,45.982],[8.97,8.615,9.175],[55.967,60.496,60.167],[21.882,23.315,20.682],[45.608,44.884,46.276],[11.158,11.634,11.303],[45.579,45.98,45.876],[20.608,20.286,19.658],[61.958,56.967,57.938],[16.631,16.407,16.001],[54.823,54.509,55.721],[37.537,37.871,35.987],[44.391,45.371,42.038],[36.6,35.241,34.008],[45.017,47.277,46.452],[20.563,20.479,20.133],[45.574,50.505,46.35],[3.938,4.774,4],[45.39,49.386,49.917],[4.213,5.3,4.646],[37.896,40.148,38.818],[6.691,5.399,5.416],[40.699,40.861,39.371],[31.637,25.14,22.386],[34.876,42.317,34.804],[29.551,30.952,29.158],[37.968,36.412,40.802],[16.994,17.633,19.139],[42.905,33.871,41.546],[10.964,8.672,8.138],[44.86,36.936,37.002],[4.561,3.01,5.394],[34.341,34.276,41.923],[3.574,3.156,2.749]],"source":"top_sub_projects/results/clickhouse_720_GB_default.json"}
+,{"system":"Snowflake","date":"2023-06-28","machine":"2XLARGE","config":"date_project_cluster","comment":"","tags":["Cloud"],"data_size":1467343154176,"result":[[55.374,51.012,50.706],[12.67,12.313,12.225],[50.94,50.301,51.316],[23.132,22.967,23.269],[49.631,50.563,50.633],[13.759,13.727,13.808],[50.083,49.749,50.277],[2.277,2.194,2.381],[50.119,50.901,50.52],[3.662,3.606,3.664],[49.554,49.547,50.191],[4.282,4.239,4.287],[49.528,49.523,49.624],[29.887,29.994,29.929],[49.821,50.168,49.921],[12.312,12.296,12.282],[49.756,49.719,49.393],[10.227,10.023,7.574],[50.336,49.876,49.969],[18.39,17.101,16.986],[50.473,50.318,50.169],[10.955,10.925,10.703],[50.304,50.388,50.873],[18.438,18.651,18.529],[50.322,50.654,50.292],[11.998,11.976,11.967],[50.653,50.277,50.159],[33.669,33.841,33.662],[50.024,49.808,50.332],[41.089,41.117,40.611],[49.639,50.406,50.29],[19.94,20.523,20.004],[50.233,50.143,49.899],[2.882,2.906,2.879],[50.52,49.842,49.801],[3.814,4.176,3.779],[49.557,49.403,49.547],[5.293,5.235,6.264],[49.581,49.654,49.748],[22.282,22.237,22.142],[49.493,49.396,49.727],[40.668,39.795,40.117],[49.659,49.344,49.347],[18.809,18.974,20.578],[50.682,49.791,50.047],[7.873,7.954,7.802],[49.632,49.753,49.651],[2.124,2.268,2.084],[49.815,49.595,49.543],[1.946,1.445,1.423]],"source":"top_sub_projects/results/snowflake_2XLARGE_date_project_cluster.json"}
+]; // end of data
+const queries = [
+"select project, count() c FROM pypi WHERE project LIKE '%google%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%google%' AND date >= '2023-06-23'::Date - toIntervalDay(35) AND date <= '2023-06-23'::Date - toIntervalDay(15) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(35) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(15) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%azure%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%azure%' AND date >= '2023-06-23'::Date - toIntervalDay(59) AND date <= '2023-06-23'::Date - toIntervalDay(20) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(59) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(20) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%boto3%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%boto3%' AND date >= '2023-06-23'::Date - toIntervalDay(36) AND date <= '2023-06-23'::Date - toIntervalDay(13) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(36) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(13) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%requests%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%requests%' AND date >= '2023-06-23'::Date - toIntervalDay(42) AND date <= '2023-06-23'::Date - toIntervalDay(39) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(42) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(39) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%python%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%python%' AND date >= '2023-06-23'::Date - toIntervalDay(21) AND date <= '2023-06-23'::Date - toIntervalDay(16) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(21) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(16) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%urllib3%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%urllib3%' AND date >= '2023-06-23'::Date - toIntervalDay(25) AND date <= '2023-06-23'::Date - toIntervalDay(19) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(25) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(19) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%botocore%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%botocore%' AND date >= '2023-06-23'::Date - toIntervalDay(85) AND date <= '2023-06-23'::Date - toIntervalDay(32) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(85) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(32) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%setuptools%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%setuptools%' AND date >= '2023-06-23'::Date - toIntervalDay(21) AND date <= '2023-06-23'::Date - toIntervalDay(0) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(21) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(0) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%charset%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%charset%' AND date >= '2023-06-23'::Date - toIntervalDay(41) AND date <= '2023-06-23'::Date - toIntervalDay(29) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(41) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(29) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%typing%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%typing%' AND date >= '2023-06-23'::Date - toIntervalDay(50) AND date <= '2023-06-23'::Date - toIntervalDay(21) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(50) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(21) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%idna%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%idna%' AND date >= '2023-06-23'::Date - toIntervalDay(28) AND date <= '2023-06-23'::Date - toIntervalDay(10) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(28) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(10) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%certifi%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%certifi%' AND date >= '2023-06-23'::Date - toIntervalDay(52) AND date <= '2023-06-23'::Date - toIntervalDay(21) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(52) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(21) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%s3transfer%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%s3transfer%' AND date >= '2023-06-23'::Date - toIntervalDay(65) AND date <= '2023-06-23'::Date - toIntervalDay(45) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(65) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(45) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%awscli%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%awscli%' AND date >= '2023-06-23'::Date - toIntervalDay(82) AND date <= '2023-06-23'::Date - toIntervalDay(23) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(82) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(23) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%six%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%six%' AND date >= '2023-06-23'::Date - toIntervalDay(89) AND date <= '2023-06-23'::Date - toIntervalDay(17) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(89) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(17) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%importlib%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%importlib%' AND date >= '2023-06-23'::Date - toIntervalDay(62) AND date <= '2023-06-23'::Date - toIntervalDay(28) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(62) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(28) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%pyasn1%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%pyasn1%' AND date >= '2023-06-23'::Date - toIntervalDay(18) AND date <= '2023-06-23'::Date - toIntervalDay(15) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(18) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(15) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%pyyaml%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%pyyaml%' AND date >= '2023-06-23'::Date - toIntervalDay(17) AND date <= '2023-06-23'::Date - toIntervalDay(12) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(17) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(12) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%grpcio%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%grpcio%' AND date >= '2023-06-23'::Date - toIntervalDay(12) AND date <= '2023-06-23'::Date - toIntervalDay(4) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(12) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(4) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%pytest%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%pytest%' AND date >= '2023-06-23'::Date - toIntervalDay(53) AND date <= '2023-06-23'::Date - toIntervalDay(15) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(53) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(15) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%clickhouse%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%clickhouse%' AND date >= '2023-06-23'::Date - toIntervalDay(86) AND date <= '2023-06-23'::Date - toIntervalDay(15) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(86) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(15) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%snowflake%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%snowflake%' AND date >= '2023-06-23'::Date - toIntervalDay(33) AND date <= '2023-06-23'::Date - toIntervalDay(0) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(33) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(0) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%mysql%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%mysql%' AND date >= '2023-06-23'::Date - toIntervalDay(83) AND date <= '2023-06-23'::Date - toIntervalDay(70) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(83) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(70) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%elasticsearch%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%elasticsearch%' AND date >= '2023-06-23'::Date - toIntervalDay(56) AND date <= '2023-06-23'::Date - toIntervalDay(53) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(56) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(53) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%postgres%' AND date >= '2023-06-23'::Date - toIntervalDay(90) GROUP BY project ORDER BY c DESC LIMIT 10;"
+,"select project, count() c FROM pypi WHERE project LIKE '%postgres%' AND date >= '2023-06-23'::Date - toIntervalDay(50) AND date <= '2023-06-23'::Date - toIntervalDay(49) AND timestamp >= '2023-06-23 08:33:59'::DateTime - toIntervalDay(50) AND timestamp <= '2023-06-23 08:33:59'::DateTime - toIntervalDay(49) GROUP BY project ORDER BY c DESC LIMIT 10;"
+]; // end of queries
+
+    </script>
+</head>
+<body>
+
+<div class="header stick-left">
+    <span class="nowrap themes"><span id="toggle-dark">🌚</span><span id="toggle-light">🌞</span></span>
+    <h1>ClickHouse vs Snowflake - Top Sub Projects</h1>
+    <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Methodology</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Reproduce and Validate the Results</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Add a System</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Report Mistake</a>
+</div>
+
+<table class="selectors-container stick-left">
+    <tr>
+        <th>System: </th>
+        <td id="selectors_system">
+            <a id="select-all-systems" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Type: </th>
+        <td id="selectors_type">
+            <a id="select-all-types" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Machine: </th>
+        <td id="selectors_machine">
+            <a id="select-all-machines" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Configuration: </th>
+        <td id="selectors_config">
+            <a id="select-all-configs" class="selector selector-active">All</a>
+        </td>
+    </tr>
+    <tr>
+        <th>Metric: </th>
+        <td id="selectors_run">
+            <a class="selector" id="selector-metric-cold">Cold Run</a>
+            <a class="selector" id="selector-metric-hot">Hot Run</a>
+            <a class="selector" id="selector-metric-size">Storage Size</a>
+        </td>
+    </tr>
+</table>
+
+<table class="stick-left comparison">
+    <thead>
+        <tr>
+            <th class="summary-name">
+                System &amp; Machine
+            </th>
+            <th colspan="2">
+                Relative <span id="time-or-size">time</span> (lower is better)
+            </th>
+        </tr>
+    </thead>
+    <tbody id="summary">
+    </tbody>
+</table>
+
+<div id="nothing-selected" class="stick-left">Nothing selected</div>
+
+<div class="stick-left comparison">
+    <h2>Detailed Comparison</h2>
+</div>
+
+<table id="details">
+    <thead>
+        <tr id="details_head">
+        </tr>
+    </thead>
+    <tbody id="details_body">
+    </tbody>
+</table>
+
+<script type="text/javascript">
+
+const constant_time_add = 0.01;
+const missing_result_penalty = 2;
+const missing_result_time = 300;
+
+let selectors = {
+    "system": {},
+    "type": {},
+    "machine": {},
+    "config": {},
+    "metric": "hot",
+    "queries": [],
+};
+
+let theme = 'light';
+
+function setTheme(new_theme) {
+    theme = new_theme;
+    document.documentElement.setAttribute('data-theme', theme);
+    window.localStorage.setItem('theme', theme);
+    render();
+}
+
+document.getElementById('toggle-light').addEventListener('click', e => setTheme('light'));
+document.getElementById('toggle-dark').addEventListener('click', e => setTheme('dark'));
+
+let new_theme = window.localStorage.getItem('theme');
+if (new_theme && new_theme != theme) {
+    setTheme(new_theme);
+}
+
+/// Generate selectors
+
+let systems = document.getElementById('selectors_system');
+let types = document.getElementById('selectors_type');
+let machines = document.getElementById('selectors_machine');
+let configs = document.getElementById('selectors_config');
+
+let unique_systems = [... new Set(data.map(elem => elem.system))];
+
+function toggle(e, elem, selectors_map) {
+    selectors_map[elem] = !selectors_map[elem];
+    e.target.className = selectors_map[elem] ? 'selector selector-active' : 'selector';
+    render();
+    updateHistory();
+}
+
+function toggleAll(e, selectors_map) {
+    const new_value = Object.keys(selectors_map).filter(k => selectors_map[k]).length * 2 < Object.keys(selectors_map).length;
+    [...e.target.parentElement.querySelectorAll('a')].map(
+        elem => { elem.className = new_value ? 'selector selector-active' : 'selector' });
+
+    Object.keys(selectors_map).map(k => { selectors_map[k] = new_value });
+    render();
+    updateHistory();
+}
+
+unique_systems.map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    systems.appendChild(selector);
+    if (!(elem in selectors.system)) { selectors.system[elem] = data.some(entry => entry.system == elem && !entry.hide); }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.system));
+
+    /// Highlighting summary rows and table columns on hovering over the system selector.
+    selector.addEventListener('mouseover', e => {
+        [...document.querySelectorAll('.summary-row')].map(row => {
+            row.className = row.dataset.system == elem ? 'summary-row summary-row-hilite' : 'summary-row' });
+        [...document.querySelectorAll('.th-entry')].map(th => {
+            th.className = th.dataset.system == elem ? 'th-entry th-entry-hilite' : 'th-entry' });
+    });
+    selector.addEventListener('mouseout', e => {
+        [...document.querySelectorAll('.summary-row')].map(row => { row.className = 'summary-row' });
+        [...document.querySelectorAll('.th-entry')].map(row => { row.className = 'th-entry' });
+    });
+});
+
+[... new Set(data.map(elem => elem.tags).flat())].map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    types.appendChild(selector);
+    if (!(elem in selectors.type)) { selectors.type[elem] = true; }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.type));
+});
+
+[... new Set(data.map(elem => elem.machine))].map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    machines.appendChild(selector);
+    if (!(elem in selectors.machine)) { selectors.machine[elem] = true; }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.machine));
+});
+
+[... new Set(data.map(elem => elem.config))].sort(
+    (a, b) => ((typeof(b) === 'number') - (typeof(a) === 'number')) || (a - b)).map(elem => {
+    let selector = document.createElement('a');
+    selector.className = 'selector selector-active';
+    selector.appendChild(document.createTextNode(elem));
+    configs.appendChild(selector);
+    if (!(elem in selectors.config)) { selectors.config[elem] = true; }
+    selector.addEventListener('click', e => toggle(e, elem, selectors.config));
+});
+
+document.getElementById('select-all-systems').addEventListener('click', e => toggleAll(e, selectors.system));
+document.getElementById('select-all-types').addEventListener('click', e => toggleAll(e, selectors.type));
+document.getElementById('select-all-machines').addEventListener('click', e => toggleAll(e, selectors.machine));
+document.getElementById('select-all-configs').addEventListener('click', e => toggleAll(e, selectors.config));
+
+[...document.getElementById('selectors_run').querySelectorAll('a')].map(elem => elem.addEventListener('click', e => {
+    [...e.target.parentElement.querySelectorAll('a')].map(elem => { elem.className = elem == e.target ? 'selector selector-active' : 'selector' });
+}));
+
+document.getElementById('selector-metric-cold').addEventListener('click', e => { selectors.metric = 'cold'; render(); updateHistory(); });
+document.getElementById('selector-metric-hot').addEventListener('click', e => { selectors.metric = 'hot'; render(); updateHistory(); });
+document.getElementById('selector-metric-size').addEventListener('click', e => { selectors.metric = 'size'; render(); updateHistory(); });
+
+selectors.queries = [...data[0].result.keys()].map(k => true);
+
+function updateSelectors() {
+    [...systems.childNodes].map(elem => { elem.className = selectors.system[elem.innerText] ? 'selector selector-active' : 'selector' });
+    [...types.childNodes].map(elem => { elem.className = selectors.type[elem.innerText] ? 'selector selector-active' : 'selector' });
+    [...machines.childNodes].map(elem => { elem.className = selectors.machine[elem.innerText] ? 'selector selector-active' : 'selector' });
+    [...configs.childNodes].map(elem => { elem.className = selectors.config[elem.innerText] ? 'selector selector-active' : 'selector' });
+
+    [...document.getElementById('selectors_run').querySelectorAll('a')].map(elem => {
+        elem.className = elem.id == 'selector-metric-' + selectors.metric ? 'selector selector-active' : 'selector' });
+
+    [...document.querySelectorAll('.query-checkbox')].map((elem, i) => { elem.checked = selectors.queries[i] });
+}
+
+function clearElement(elem)
+{
+    while (elem.firstChild) {
+        elem.removeChild(elem.lastChild);
+    }
+}
+
+function selectRun(timings) {
+    return selectors.metric == 'cold' ? timings[0] : (timings.some(timing => timing !== null) ? Math.min(...timings.slice(1).filter(timing => timing !== null)) : null)
+}
+
+function addNote(text) {
+    let note = document.createElement('sup');
+    note.className = 'note';
+    note.appendChild(document.createTextNode('†'));
+
+    let tooltip = document.createElement('span');
+    tooltip.className = 'tooltip tooltip-result';
+    tooltip.appendChild(document.createTextNode(text));
+
+    note.appendChild(tooltip);
+    return note;
+}
+
+function renderSummary(filtered_data) {
+    let table = document.getElementById('summary');
+    clearElement(table);
+
+    /// Generate summary
+
+    /// The algorithm: for each of the queries,
+    /// - if there is a result - take query duration, add 10 ms, and divide it to the corresponding value from the baseline,
+    /// - if there is no result - take the worse query duration across all query runs for this system and multiply by 2.
+    /// Take geometric mean across the queries.
+
+    let summary = {};
+
+    const num_queries = filtered_data[0].result.length;
+
+    const baseline_data = [...filtered_data[0].result.keys()].map(query_num =>
+        [...Array(5).keys()].map(run_num =>
+            Math.min(...filtered_data.filter(elem => !elem.fake).map(elem => elem.result[query_num][run_num]).filter(x => x))));
+
+    const min_data_size = Math.min(...filtered_data.map(elem => elem.data_size).filter(x => x));
+
+    let summaries;
+    if (selectors.metric == 'size') {
+        summaries = filtered_data.map(elem => elem.data_size / min_data_size);
+        document.getElementById('time-or-size').innerText = 'size';
+    } else {
+        summaries = filtered_data.map(elem => {
+            const fallback_timing = missing_result_penalty * Math.max(missing_result_time, ...elem.result.map(timings => selectRun(timings)));
+
+            let accumulator = 0;
+            let used_queries = 0;
+
+            const no_queries_selected = selectors.queries.filter(x => x).length == 0;
+
+            for (let i = 0; i < num_queries; ++i) {
+                if (no_queries_selected || selectors.queries[i]) {
+                    const curr_timing = selectRun(elem.result[i]) ?? fallback_timing;
+                    const baseline_timing = selectRun(baseline_data[i]);
+                    const ratio = (constant_time_add + curr_timing) / (constant_time_add + baseline_timing);
+                    accumulator += Math.log(ratio);
+                    ++used_queries;
+                }
+            }
+
+            return Math.exp(accumulator / used_queries);
+        });
+        document.getElementById('time-or-size').innerText = 'time';
+    }
+
+    const sorted_indices = [...summaries.keys()].sort((a, b) => summaries[a] - summaries[b]);
+    const max_ratio = summaries[sorted_indices[sorted_indices.length - 1]];
+
+    sorted_indices.map(idx => {
+        const elem = filtered_data[idx];
+
+        if (selectors.metric == 'size' && elem.data_size === null) { return; }
+
+        let tr = document.createElement('tr');
+        tr.className = 'summary-row';
+
+        tr.dataset.system = elem.system;
+
+        let td_name = document.createElement('td');
+        td_name.className = 'summary-name';
+
+        if (!elem.fake) {
+            let link = document.createElement('a');
+            link.appendChild(document.createTextNode(`${elem.system} (${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine} - ${elem.config})`));
+            link.href = "https://github.com/ClickHouse/clickhouse_vs_snowflake/blob/main/" + elem.source;
+            td_name.appendChild(link);
+        } else {
+            td_name.appendChild(document.createTextNode(elem.system));
+        }
+
+        if (elem.comment) { td_name.appendChild(addNote(elem.comment)); }
+        td_name.appendChild(document.createTextNode(': '));
+
+        const ratio = summaries[idx];
+        const percentage = summaries[idx] / max_ratio * 100;
+
+        let td_number = document.createElement('td');
+        td_number.className = 'summary-number';
+
+        const text = selectors.metric == 'size' ? `${(elem.data_size / 1024 / 1024 / 1024).toFixed(2)} GiB (×${ratio.toFixed(2)})`
+            : `×${ratio.toFixed(2)}`;
+
+        td_number.appendChild(document.createTextNode(text));
+
+        let td_bar = document.createElement('td');
+        td_bar.className = 'summary-bar-cell';
+
+        let bar = document.createElement('div');
+
+        bar.className = `summary-bar`;
+        bar.style.width = `${percentage}%`;
+
+        td_bar.appendChild(bar);
+
+        tr.appendChild(td_name);
+        tr.appendChild(td_bar);
+        tr.appendChild(td_number);
+        table.appendChild(tr);
+    });
+
+    return [sorted_indices, baseline_data];
+}
+
+function colorize(elem, ratio) {
+    let [r, g, b] = [0, 0, 0];
+
+    /// ratio less than 1 - green
+    /// ratio from 1 to 2 - green to yellow
+    /// ratio from 2 to 10 - yellow to red
+    /// ratio from 10 to 1000 to infinity - red to brown to black
+
+    /// Note: we are using RGB space without proper gamma correction. Read more: https://www.handprint.com/HP/WCL/color1.html
+
+    if (ratio !== null) {
+        if (ratio < 1) {
+            r = 232;
+            g = 255;
+            b = 232;
+        } else if (ratio <= 1) {
+            g = 255;
+        } else if (ratio <= 2) {
+            g = 255;
+            r = (ratio - 1) * 255;
+        } else if (ratio <= 10) {
+            g = (10 - ratio) / 8 * 255;
+            r = 255;
+        } else {
+            r = (1 - ((ratio - 10) / ((ratio - 10) + 1000))) * 255;
+        }
+    }
+
+    if (document.documentElement.getAttribute('data-theme') == 'dark') {
+        r /= 1.5;
+        g /= 1.5;
+        b /= 1.5;
+    }
+
+    elem.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+    if (ratio === null || ratio > 10) {
+        /// This will look better on dark backgrounds
+        elem.style.color = 'white';
+    } else {
+        elem.style.color = 'black';
+    }
+
+    /// The best result is highlighted
+    if (ratio == 1) {
+        elem.style.fontWeight = 'bold';
+    }
+}
+
+function render() {
+    let details_head = document.getElementById('details_head');
+    let details_body = document.getElementById('details_body');
+
+    clearElement(details_head);
+    clearElement(details_body);
+
+    let filtered_data = data.filter(elem =>
+        selectors.system[elem.system] &&
+        selectors.machine[elem.machine] &&
+        selectors.config[elem.config] &&
+        elem.tags.filter(type => selectors.type[type]).length > 0);
+
+    let nothing_selected_elem = document.getElementById('nothing-selected');
+    if (filtered_data.length == 0) {
+        nothing_selected_elem.style.display = 'block';
+        [...document.querySelectorAll('.comparison')].map(e => e.style.display = 'none');
+        return;
+    }
+    nothing_selected_elem.style.display = 'none';
+    [...document.querySelectorAll('.comparison')].map(e => e.style.display = 'block');
+
+    if (selectors.metric == 'size') {
+        filtered_data = [...filtered_data];
+    }
+
+    let [sorted_indices, baseline_data] = renderSummary(filtered_data);
+    sorted_indices = sorted_indices.filter(idx => !filtered_data[idx].fake);
+
+    /// Generate details
+
+    /// Global checkbox
+    {
+        let th_checkbox = document.createElement('th');
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        checkbox.addEventListener('change', e => {
+            [...document.querySelectorAll('.query-checkbox')].map(elem => { elem.checked = e.target.checked });
+            selectors.queries.map((_, i) => { selectors.queries[i] = e.target.checked });
+            renderSummary(filtered_data);
+            updateHistory();
+        });
+        th_checkbox.appendChild(checkbox);
+        details_head.appendChild(th_checkbox);
+        details_head.appendChild(document.createElement('th'));
+    }
+
+    /// Table header
+    sorted_indices.map(idx => {
+        const elem = filtered_data[idx];
+        let th = document.createElement('th');
+        th.appendChild(document.createTextNode(`${elem.system}\n(${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine} - \n ${elem.config})`));
+        th.className = 'th-entry';
+        th.dataset.system = elem.system;
+        details_head.appendChild(th);
+    });
+
+
+
+    /// Data sizes
+    {
+        let tr = document.createElement('tr');
+        tr.className = 'shadow';
+
+        let td_title = document.createElement('td');
+        td_title.colSpan = 2;
+        td_title.appendChild(document.createTextNode('Data size: '));
+        tr.appendChild(td_title);
+
+        sorted_indices.map(idx => {
+            const curr_size = filtered_data[idx].data_size;
+            const baseline_size = Math.min(...filtered_data.map(elem => elem.data_size).filter(x => x));
+            const ratio = curr_size !== null ? curr_size / baseline_size : null;
+
+            let td = document.createElement('td');
+            td.appendChild(document.createTextNode(curr_size !== null ? `${(curr_size / 1024 / 1024 / 1024).toFixed(2)} GiB (×${ratio.toFixed(2)})` : '☠'));
+
+            colorize(td, ratio);
+            tr.appendChild(td);
+        });
+
+        details_body.appendChild(tr);
+    }
+
+    /// Query runtimes
+    const num_queries = filtered_data[0].result.length;
+
+    for (let query_num = 0; query_num < num_queries; ++query_num) {
+        let tr = document.createElement('tr');
+        tr.className = 'shadow';
+
+        let td_checkbox = document.createElement('td');
+        let checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'query-checkbox';
+        checkbox.checked = selectors.queries[query_num];
+        checkbox.addEventListener('change', e => {
+            selectors.queries[query_num] = e.target.checked;
+            renderSummary(filtered_data);
+            updateHistory();
+        });
+        td_checkbox.appendChild(checkbox);
+        tr.appendChild(td_checkbox);
+
+        let td_query_num = document.createElement('td');
+        td_query_num.className = 'note';
+        td_query_num.appendChild(document.createTextNode(`Q${query_num}. `));
+
+        let tooltip = document.createElement('span');
+        tooltip.className = 'tooltip tooltip-query';
+        tooltip.appendChild(document.createTextNode(`Query ${query_num}: ${queries[query_num]}`));
+        td_query_num.appendChild(tooltip);
+
+        tr.appendChild(td_query_num);
+
+        sorted_indices.map(idx => {
+            const curr_timing = selectRun(filtered_data[idx].result[query_num]);
+            const baseline_timing = selectRun(baseline_data[query_num]);
+            const ratio = curr_timing !== null ? (constant_time_add + curr_timing) / (constant_time_add + baseline_timing) : null;
+
+            let td = document.createElement('td');
+            td.appendChild(document.createTextNode(curr_timing !== null ? `${curr_timing.toFixed(2)}s (×${ratio.toFixed(2)})` : '☠'));
+
+            colorize(td, ratio);
+            tr.appendChild(td);
+        });
+
+        details_body.appendChild(tr);
+    }
+}
+
+function updateHistory() {
+    history.pushState(selectors, '',
+        window.location.pathname + (window.location.search || '') + '#' + btoa(JSON.stringify(selectors)));
+}
+
+window.onpopstate = function(event) {
+    if (!event.state) { return; }
+    selectors = event.state;
+    render();
+    updateSelectors();
+};
+
+if (window.location.hash) {
+    try {
+        selectors = JSON.parse(atob(window.location.hash.substring(1)));
+    } catch {}
+}
+
+render();
+updateSelectors();
+
+</script>
+</body>
+</html>
