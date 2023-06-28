@@ -19,7 +19,7 @@ SELECT
     system.name AS system,
     count() AS count
 FROM pypi
-WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90))) AND (timestamp >= (CAST('2023-06-23 08:33:59', 'DateTime') - toIntervalDay(90))) AND (system IN (
+WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90))) AND (system IN (
     SELECT system.name AS system
     FROM pypi
     WHERE (system != '') AND (project = 'boto3')

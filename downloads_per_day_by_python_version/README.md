@@ -18,7 +18,7 @@ SELECT
     concat(splitByChar('.', python)[1], '.', splitByChar('.', python)[2]) AS major,
     count() AS count
 FROM pypi
-WHERE (python != '') AND (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90))) AND (timestamp >= (CAST('2023-06-23 08:33:59', 'DateTime') - toIntervalDay(90)))
+WHERE (python != '') AND (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90)))
 GROUP BY
     day,
     major
