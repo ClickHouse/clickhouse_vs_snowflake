@@ -63,5 +63,87 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 |:--------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
 |        default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
 | date_project_cluster |                                                                             NA                                                                            | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
+|     file_type_mv     |                                   Materialized View that pre-calculates the count per (project, date, file.type) group                                    |                                          NA                                           |
+
+
+## Optimizations
+
+### ClickHouse
+
+#### file_type_mv 
+Materialized View that pre-calculates the count per (project, date, file.type) group
+```sql
+-- MV target table
+CREATE TABLE pypi_file_type_mv
+(
+    `date` Date,
+    `file.type` LowCardinality(String),
+    `project` String,
+    `count` Int64
+)
+ENGINE = SummingMergeTree
+ORDER BY (project, date, file.type)
+
+
+-- MV that (only) triggers on inserts into source table
+CREATE MATERIALIZED VIEW file_type_mv TO pypi_file_type_mv AS
+SELECT
+    date,
+    file.type,
+    project,
+    count() AS count
+FROM pypi
+GROUP BY project, date, file.type
+
+
+-- back fill target table
+INSERT INTO pypi_file_type_mv
+SELECT
+    date,
+    file.type,
+    project,
+    count() AS count
+FROM pypi
+GROUP BY project, date, file.type
+-- 0 rows in set. Elapsed: 109.291 sec. Processed 65.33 billion rows, 1.43 TB (597.79 million rows/s., 13.05 GB/s
+
+------------------------------------------------------------------------------------------------------
+-- Test
+------------------------------------------------------------------------------------------------------
+-- original query against the source table
+SELECT
+    file.type,
+    count() AS c
+FROM pypi
+WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90)))
+GROUP BY file.type
+ORDER BY c DESC
+LIMIT 10
+
+┌─file.type───┬──────────c─┐
+│ bdist_wheel │ 1762515314 │
+│ sdist       │     732123 │
+└─────────────┴────────────┘
+
+2 rows in set. Elapsed: 1.113 sec. Processed 1.76 billion rows, 29.98 GB (1.58 billion rows/s., 26.93 GB/s.)
+
+-- query against the mv target table
+SELECT
+    file.type,
+    sum(count) AS c -- changed
+FROM pypi_file_type_mv -- changed
+WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90)))
+GROUP BY file.type
+ORDER BY c DESC
+LIMIT 10
+
+┌─file.type───┬──────────c─┐
+│ bdist_wheel │ 1762515314 │
+│ sdist       │     732123 │
+└─────────────┴────────────┘
+
+2 rows in set. Elapsed: 0.278 sec. Processed 32.77 thousand rows, 1.30 MB (117.89 thousand rows/s., 4.68 MB/s.)
+
+```
 
 
