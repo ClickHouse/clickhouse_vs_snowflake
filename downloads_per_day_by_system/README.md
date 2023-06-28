@@ -104,8 +104,92 @@ ORDER BY period,
 
 All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT = false;` unless stated. ClickHouse query cache is also disabled and file system cache dropped first.
 
-|      Test Config     |                                                                         ClickHouse                                                                        |                                       Snowflake                                       |
-|:--------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
-|        default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
-| date_project_cluster |                                                                             NA                                                                            | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
-|   system_projection  |                                       Projection for sub query, using a group by on project,system.name. See below.                                       |                                           NA                                          |
+|      Test Config      |                                                                         ClickHouse                                                                        |                                       Snowflake                                       |
+|:---------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
+|         default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
+|  date_project_cluster |                                                                             NA                                                                            | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
+| prj_cnt_by_prj_system |                                                            Projection for speeding up the subquery                                                        |                                           TODO                                        |
+
+
+## Optimizations
+
+### ClickHouse
+
+#### prj_cnt_by_prj_system
+
+Projection for speeding up the subquery.
+
+
+```sql
+CREATE TABLE pypi_test1 AS pypi;
+INSERT INTO pypi_test1 SELECT * FROM pypi LIMIT 1_000_000;
+
+ALTER TABLE pypi_test1
+    ADD PROJECTION prj_count_by_project_system
+    (
+        SELECT
+            project,
+            system.1 as my_name, -- doesn't work with system.name TODO: report to dev
+            count() as c
+        GROUP BY project, my_name
+    );
+
+ALTER TABLE pypi_test1
+    MATERIALIZE PROJECTION prj_count_by_project_system SETTINGS mutations_sync = 1;
+
+EXPLAIN indexes=1
+SELECT
+    date as day,
+    system.name as system,
+    count () AS count
+FROM pypi_test1
+WHERE (project = 'boto3')
+  AND (date >= '2023-06-23'::DateTime - toIntervalDay(90))
+  AND system IN (
+------------------------------------------
+    SELECT
+        system.1 as system -- important to use .1 instead of .name - otherwise projection is not used
+    FROM pypi_test1
+    WHERE system != ''
+      AND project = 'boto3'
+    GROUP BY system
+    ORDER BY count () DESC LIMIT 10)
+------------------------------------------
+GROUP BY day, system
+ORDER BY day ASC, count DESC;
+--
+-- ┌─explain────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+-- │ CreatingSets (Create sets before main query execution)                                                         │
+-- │   Expression (Projection)                                                                                      │
+-- │     Sorting (Sorting for ORDER BY)                                                                             │
+-- │       Expression (Before ORDER BY)                                                                             │
+-- │         Aggregating                                                                                            │
+-- │           Expression (Before GROUP BY)                                                                         │
+-- │             Filter (WHERE)                                                                                     │
+-- │               ReadFromMergeTree (default.pypi_test1)                                                           │
+-- │               Indexes:                                                                                         │
+-- │                 PrimaryKey                                                                                     │
+-- │                   Keys:                                                                                        │
+-- │                     project                                                                                    │
+-- │                     date                                                                                       │
+-- │                   Condition: and((_CAST(date) in [1679702400, +Inf)), (project in ['boto3', 'boto3']))         │
+-- │                   Parts: 4/4                                                                                   │
+-- │                   Granules: 11/122                                                                             │
+-- │   CreatingSet (Create set for subquery)                                                                        │
+-- │     Expression (Projection)                                                                                    │
+-- │       Limit (preliminary LIMIT (without OFFSET))                                                               │
+-- │         Sorting (Sorting for ORDER BY)                                                                         │
+-- │           Expression (Before ORDER BY)                                                                         │
+-- │             Aggregating                                                                                        │
+-- │               Filter                                                                                           │
+-- │                 ReadFromMergeTree (prj_count_by_project_system)                                                │
+-- │                 Indexes:                                                                                       │
+-- │                   PrimaryKey                                                                                   │
+-- │                     Keys:                                                                                      │
+-- │                       project                                                                                  │
+-- │                       tupleElement(system, 1)                                                                  │
+-- │                     Condition: and((project in ['boto3', 'boto3']), (tupleElement(system, 1) not in ['', ''])) │
+-- │                     Parts: 4/4                                                                                 │
+-- │                     Granules: 4/122                                                                            │
+-- └────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
