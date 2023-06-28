@@ -1,6 +1,27 @@
-# ClickHouse vs Snowflake
+# ClickHouse vs Snowflake for Real-time Analytics
 
-## Load PYPI data
+## Goals
+
+To provide a real-time analytics benchmark comparing ClickHouse and Snowflake when resources are comparable and all effort is made to optimize both.
+
+Goals similar to [ClickBench](https://github.com/ClickHouse/ClickBench#goals).
+
+## Use case and dataset 
+
+
+
+Todo
+
+
+
+## Limitations
+
+
+
+Todo
+
+
+
 
 ### ClickHouse
 
