@@ -10,7 +10,7 @@ if [ -z "$folder" ] ; then
 fi
 
 (
-    sed '/^const data = \[$/q' index.html.template
+    sed '/^const data = \[$/q' $folder/index.html.template
 
     FIRST=1
     ls -1 $folder/results/*.json | while read file
@@ -31,9 +31,7 @@ fi
         FIRST=0
     done
     echo ']; // end of queries'
-    sed '1,/^\]; \/\/ end of queries$/d' index.html.template
+    sed '1,/^\]; \/\/ end of queries$/d' $folder/index.html.template
     set +o noglob
 ) > $folder/index.html
 
-
-#ClickHouse vs Snowflake — a Benchmark For play.clickhouse.com

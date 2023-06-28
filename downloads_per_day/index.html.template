@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title><title></title>
+    <title>ClickHouse vs Snowflake - Downloads per Day</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -295,7 +295,7 @@ const queries = [
 
 <div class="header stick-left">
     <span class="nowrap themes"><span id="toggle-dark">🌚</span><span id="toggle-light">🌞</span></span>
-    <h1>ClickHouse vs Snowflake</h1>
+    <h1>ClickHouse vs Snowflake - Downloads per Day</h1>
     <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Methodology</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Reproduce and Validate the Results</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Add a System</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Report Mistake</a>
 </div>
 
@@ -589,8 +589,8 @@ function renderSummary(filtered_data) {
 
         if (!elem.fake) {
             let link = document.createElement('a');
-            link.appendChild(document.createTextNode(`${elem.system} (${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine})`));
-            link.href = "https://github.com/ClickHouse/ClickBench/blob/main/" + elem.source;
+            link.appendChild(document.createTextNode(`${elem.system} (${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine} - ${elem.config})`));
+            link.href = "https://github.com/ClickHouse/clickhouse_vs_snowflake/blob/main/" + elem.source;
             td_name.appendChild(link);
         } else {
             td_name.appendChild(document.createTextNode(elem.system));
@@ -729,7 +729,7 @@ function render() {
     sorted_indices.map(idx => {
         const elem = filtered_data[idx];
         let th = document.createElement('th');
-        th.appendChild(document.createTextNode(`${elem.system}\n(${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine})`));
+        th.appendChild(document.createTextNode(`${elem.system}\n(${Number.isInteger(elem.config) && elem.config > 1 ? elem.config + '×': ''}${elem.machine} - \n ${elem.config})`));
         th.className = 'th-entry';
         th.dataset.system = elem.system;
         details_head.appendChild(th);

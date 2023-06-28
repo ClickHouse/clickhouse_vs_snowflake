@@ -31,18 +31,18 @@ if [ -z "$config" ] ; then
   exit 1
 fi
 
-data_size=$(clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --query="SELECT sum(total_bytes) FROM system.tables WHERE table = 'pypi'")
+data_size=$(/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --query="SELECT sum(total_bytes) FROM system.tables WHERE table = 'pypi'")
 now=$(date +'%Y-%m-%d')
 now_epoch=$(date +%s%N)
 echo "{\"system\":\"ClickHouse\",\"date\":\"${now}\",\"machine\":\"${spec}\",\"config\":\"${config}\",\"comment\":\"\",\"tags\":[\"${tag}\"],\"data_size\":${data_size},\"result\":[" > $folder/clickhouse_temp_${now_epoch}.json
 
 echo "dropping file system cache"
-clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --format=Null --query="SYSTEM DROP FILESYSTEM CACHE${on_cluster}"
+/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --format=Null --query="SYSTEM DROP FILESYSTEM CACHE${on_cluster}"
 
 cat $folder/clickhouse_queries.sql | while read query; do
     echo -n "[" >> $folder/clickhouse_temp_${now_epoch}.json
     for i in $(seq 1 $TRIES); do
-        RES=$(clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --time --format=Null --query="${query} ${SETTINGS}" 2>&1)
+        RES=$(/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --time --format=Null --query="${query} ${SETTINGS}" 2>&1)
         if [ "$?" == "0" ] && [ "${#RES}" -lt "10" ]; then
             echo "${QUERY_NUM}, ${i} - OK"
             echo -n "${RES}" >> $folder/clickhouse_temp_${now_epoch}.json
@@ -55,6 +55,7 @@ cat $folder/clickhouse_queries.sql | while read query; do
     echo "]," >> $folder/clickhouse_temp_${now_epoch}.json
     QUERY_NUM=$((QUERY_NUM + 1))
 done
+
 
 sed '$ s/.$//' $folder/clickhouse_temp_${now_epoch}.json > $folder/clickhouse_results_${now_epoch}.json
 echo ']}' >> $folder/clickhouse_results_${now_epoch}.json
