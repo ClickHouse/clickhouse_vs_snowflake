@@ -127,13 +127,17 @@ ALTER TABLE pypi
     (
         SELECT
             project,
-            system.1 as my_name, -- doesn't work with system.name
+            system.1 as system_name, -- doesn't work with system.name - known issue
             count() as c
-        GROUP BY project, my_name
+        GROUP BY project, system_name
     );
 
+
 ALTER TABLE pypi
-    MATERIALIZE PROJECTION prj_count_by_project_system SETTINGS mutations_sync = 1;
+    MATERIALIZE PROJECTION prj_count_by_project_system;
+-- This will run asynchronously as a mutation.
+-- This can take a while.
+-- See further below for monitoring queries.
 
 EXPLAIN indexes=1
 SELECT
@@ -155,7 +159,7 @@ WHERE (project = 'boto3')
 ------------------------------------------
 GROUP BY day, system
 ORDER BY day ASC, count DESC;
---
+
 -- ┌─explain────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 -- │ CreatingSets (Create sets before main query execution)                                                         │
 -- │   Expression (Projection)                                                                                      │
@@ -190,6 +194,62 @@ ORDER BY day ASC, count DESC;
 -- │                     Parts: 4/4                                                                                 │
 -- │                     Granules: 4/122                                                                            │
 -- └────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+------------------------------------------------------------------------------------------------------
+-- Monitor projection materialization progress
+------------------------------------------------------------------------------------------------------
+-- Eventually the projection will have the same number of parts as the source table.
+-- This query checks and compares the number of parts:
+WITH
+    'default' AS db_name,
+    'pypi' AS table_name,
+    'prj_count_by_project_system' AS projection_name,
+    T1 AS
+    (
+        SELECT count() AS num_parts_table
+        FROM clusterAllReplicas(default, system.parts)
+        WHERE active AND (database = db_name) AND (table = table_name)
+    ),
+    T2 AS
+    (
+        SELECT count() AS num_parts_projection
+        FROM clusterAllReplicas(default, system.projection_parts)
+        WHERE active AND (database = db_name) AND (table = table_name) AND (name = projection_name)
+    )
+SELECT
+    num_parts_table,
+    num_parts_projection,
+    concat(CAST(round((100 / num_parts_table) * num_parts_projection, 0), 'String'), '%') AS progress
+FROM T1, T2;
+
+-- ┌─num_parts_table─┬─num_parts_projection─┬─progress─┐
+-- │              78 │                   21 │ 27%      │
+-- └─────────────────┴──────────────────────┴──────────┘
+
+
+-- you can also check the is_done status of the mutation(s):
+WITH
+    'default' AS db_name,
+    'pypi' AS table_name
+SELECT
+    hostName() AS host_name,
+    is_done,
+    command,
+    create_time
+FROM clusterAllReplicas(default, system.mutations)
+WHERE (database = db_name) AND (table = table_name)
+ORDER BY create_time DESC
+
+-- ┌─host_name─────────────┬─is_done─┬─command────────────────────────────────────────────┬─────────create_time─┐
+-- │ c-plum-rq-62-server-2 │       0 │ MATERIALIZE PROJECTION prj_count_by_project_system │ 2023-06-28 16:09:11 │
+-- └───────────────────────┴─────────┴────────────────────────────────────────────────────┴─────────────────────┘
+-- ┌─host_name─────────────┬─is_done─┬─command────────────────────────────────────────────┬─────────create_time─┐
+-- │ c-plum-rq-62-server-0 │       0 │ MATERIALIZE PROJECTION prj_count_by_project_system │ 2023-06-28 16:09:11 │
+-- └───────────────────────┴─────────┴────────────────────────────────────────────────────┴─────────────────────┘
+-- ┌─host_name─────────────┬─is_done─┬─command────────────────────────────────────────────┬─────────create_time─┐
+-- │ c-plum-rq-62-server-1 │       0 │ MATERIALIZE PROJECTION prj_count_by_project_system │ 2023-06-28 16:09:11 │
+-- └───────────────────────┴─────────┴────────────────────────────────────────────────────┴─────────────────────┘
+
 ```
 
 ### Snowflake
