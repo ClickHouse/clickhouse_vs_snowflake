@@ -78,3 +78,85 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 |     bloom_filter     |                                         Bloom filter on project column to speed up LIKE. See optimizations below.                                         |                                           NA                                          |
 
 ## Optimizations
+
+### ClickHouse
+
+#### bloom_filter
+Bloom filter on project column to speed up LIKE.
+
+```sql
+ALTER TABLE pypi_bloom
+ADD INDEX fts_skip_index project TYPE ngrambf_v1(4, 1024, 1, 0) GRANULARITY 1;
+
+ALTER TABLE pypi_bloom
+MATERIALIZE INDEX fts_skip_index;
+
+------------------------------------------------------------
+-- without skipping index
+------------------------------------------------------------
+EXPLAIN indexes = 1
+SELECT
+    project,
+    count() AS c
+FROM pypi
+WHERE (project LIKE '%google%') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90)))
+GROUP BY project
+ORDER BY c DESC
+LIMIT 10
+
+┌─explain──────────────────────────────────────────────┐
+│ Expression (Projection)                              │
+│   Limit (preliminary LIMIT (without OFFSET))         │
+│     Sorting (Sorting for ORDER BY)                   │
+│       Expression (Before ORDER BY)                   │
+│         Aggregating                                  │
+│           Expression (Before GROUP BY)               │
+│             Filter (WHERE)                           │
+│               ReadFromMergeTree (default.pypi)       │
+│               Indexes:                               │
+│                 PrimaryKey                           │
+│                   Keys:                              │
+│                     date                             │
+│                   Condition: (date in [19441, +Inf)) │
+│                   Parts: 28/28                       │
+│                   Granules: 7725633/7975227          │
+└──────────────────────────────────────────────────────┘
+
+------------------------------------------------------------
+-- with skipping index
+------------------------------------------------------------
+EXPLAIN indexes = 1
+SELECT
+    project,
+    count() AS c
+FROM pypi_bloom
+WHERE (project LIKE '%google%') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90)))
+GROUP BY project
+ORDER BY c DESC
+LIMIT 10
+
+┌─explain─────────────────────────────────────────────────┐
+│ Expression (Projection)                                 │
+│   Limit (preliminary LIMIT (without OFFSET))            │
+│     Sorting (Sorting for ORDER BY)                      │
+│       Expression (Before ORDER BY)                      │
+│         Aggregating                                     │
+│           Expression (Before GROUP BY)                  │
+│             Filter (WHERE)                              │
+│               ReadFromMergeTree (default.pypi_bloom)    │
+│               Indexes:                                  │
+│                 PrimaryKey                              │
+│                   Keys:                                 │
+│                     date                                │
+│                   Condition: (date in [19441, +Inf))    │
+│                   Parts: 31/31                          │
+│                   Granules: 7717977/7975221             │
+│                 Skip                                    │
+│                   Name: fts_skip_index                  │
+│                   Description: ngrambf_v1 GRANULARITY 1 │
+│                   Parts: 29/31                          │
+│                   Granules: 302217/7717977              │
+└─────────────────────────────────────────────────────────┘
+-- 25 times less granules
+```
+
