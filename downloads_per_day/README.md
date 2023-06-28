@@ -55,6 +55,7 @@ ORDER BY period ASC;
 
 ## Test configurations
 
+All tests use disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT = false;` unless stated.
 
 | Test Config | ClickHouse                                                                                                                                                | Snowflake                                                             |
 |-------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------|

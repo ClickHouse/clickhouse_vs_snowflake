@@ -59,7 +59,7 @@ done
 sed '$ s/.$//' $folder/clickhouse_temp_${now_epoch}.json > $folder/clickhouse_results_${now_epoch}.json
 echo ']}' >> $folder/clickhouse_results_${now_epoch}.json
 mkdir -p $folder/results
-cat $folder/clickhouse_results_${now_epoch}.json | jq > $folder/results/clickhouse_${spec}.json
+cat $folder/clickhouse_results_${now_epoch}.json | jq > $folder/results/clickhouse_${spec}_${config}.json
 rm $folder/clickhouse_results_${now_epoch}.json
 rm $folder/clickhouse_temp_${now_epoch}.json
 set +o noglob

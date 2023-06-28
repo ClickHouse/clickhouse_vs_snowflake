@@ -17,14 +17,14 @@ if [ -z "$spec" ] ; then
 fi
 
 config=$3
-if [ -z "config" ] ; then
+if [ -z "$config" ] ; then
   echo "config must be specified"
   exit 1
 fi
 
 now=$(date +'%Y-%m-%d')
 now_epoch=$(date +%s%N)
-data_size=$(snowsql --schemaname INFORMATION_SCHEMA --dbname "${SNOWFLAKE_DB:=PYPI}" --warehouse "${SNOWFLAKE_WAREHOUSE:=2XLARGE}" --rolename "${SNOWFLAKE_ROLE:=ACCOUNTADMIN}" --query "SELECT ACTIVE_BYTES FROM TABLE_STORAGE_METRICS WHERE TABLE_NAME = 'PYPI' AND ACTIVE_BYTES > 0;" -o friendly=False  -o header=False -o output_format=plain -o timing=False)
+data_size=$(snowsql --schemaname INFORMATION_SCHEMA --dbname "${SNOWFLAKE_DB:=PYPI}" --warehouse "${SNOWFLAKE_WAREHOUSE:=2XLARGE}" --rolename "${SNOWFLAKE_ROLE:=ACCOUNTADMIN}" --query "SELECT ACTIVE_BYTES FROM TABLE_STORAGE_METRICS WHERE TABLE_NAME = 'PYPI' AND TABLE_SCHEMA = '${SNOWFLAKE_SCHEMA:=PYPI}' AND ACTIVE_BYTES > 0;" -o friendly=False  -o header=False -o output_format=plain -o timing=False)
 echo "{\"system\":\"Snowflake\",\"date\":\"${now}\",\"machine\":\"${spec}\",\"config\":\"${config}\",\"comment\":\"\",\"tags\":[\"Cloud\"],\"data_size\":${data_size},\"result\":[" > $folder/snowflake_temp_${now_epoch}.json
 
 cat $folder/snowflake_queries.sql | while read query; do
@@ -48,7 +48,7 @@ done
 sed '$ s/.$//' $folder/snowflake_temp_${now_epoch}.json > $folder/snowflake_results_${now_epoch}.json
 echo ']}' >> $folder/snowflake_results_${now_epoch}.json
 mkdir -p $folder/results
-cat $folder/snowflake_results_${now_epoch}.json | jq > $folder/results/snowflake_${spec}.json
+cat $folder/snowflake_results_${now_epoch}.json | jq > $folder/results/snowflake_${spec}_${config}.json
 rm $folder/snowflake_results_${now_epoch}.json
 rm $folder/snowflake_temp_${now_epoch}.json
 set +o noglob
