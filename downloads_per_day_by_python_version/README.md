@@ -1,5 +1,5 @@
 
-# Overview
+# Downloads per day by Python version
 
 - Aims to test rendering and filtering of a multi-series line chart showing downloads for a project over time.
 - This test aggregates downloads by day for the last 90 days, grouping by minor python version (e.g. `3.6`) and filtering by a project. A narrower time filter is then applied to a random time frame (same random values for both databases).

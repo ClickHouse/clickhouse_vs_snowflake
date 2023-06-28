@@ -79,14 +79,12 @@ def downloads_per_day_by_system(projects, max_datetime, max_date):
             click_queries_file.write(f"SELECT date as day, system.name as system, count() AS count FROM pypi "
                                      f"WHERE (project = '{project}') AND (date >= '{max_date}'::DateTime - "
                                      f"toIntervalDay({lower_n_days})) AND system IN ( SELECT system.name as system FROM pypi "
-                                     f"WHERE system != '' AND (project = '{project}') AND (date >= '{max_date}'::DateTime - "
-                                     f"toIntervalDay({lower_n_days})) GROUP BY system ORDER BY count() DESC LIMIT 10) "
+                                     f"WHERE system != '' AND project = '{project}' GROUP BY system ORDER BY count() DESC LIMIT 10) "
                                      f"GROUP BY day, system ORDER BY day ASC, count DESC;\n")
             snow_queries_file.write(
                 f"SELECT DATE_TRUNC('DAY',timestamp) AS day, system['name'] as system_name, count(*) AS count FROM pypi WHERE "
                 f"(project = '{project}') AND (timestamp >= DATEADD(days, -{lower_n_days}, '{max_date}'::Date)) AND system_name IN ("
-                f"SELECT system['name'] as system_name FROM pypi WHERE system_name != '' AND (project = '{project}') AND "
-                f"(timestamp >= DATEADD(days, -{lower_n_days}, '{max_datetime}'::Date)) GROUP BY system_name ORDER BY count(*) DESC "
+                f"SELECT system['name'] as system_name FROM pypi WHERE system_name != '' AND project = '{project}' GROUP BY system_name ORDER BY count(*) DESC "
                 f"LIMIT 10) GROUP BY day, system_name ORDER BY day ASC, count DESC;\n")
             lower_n_days = random.randint(1, 90)
             upper_n_days = random.randint(0, lower_n_days - 1)
@@ -100,19 +98,14 @@ def downloads_per_day_by_system(projects, max_datetime, max_date):
                                      f"timestamp >= '{max_datetime}'::DateTime - toIntervalDay({lower_n_days}) "
                                      f"AND timestamp  <= '{max_datetime}'::DateTime - toIntervalDay({upper_n_days}) AND "
                                      f"system IN ( SELECT system.name as system FROM pypi "
-                                     f"WHERE system != '' AND project = '{project}' AND date >= '{max_date}'::DateTime - "
-                                     f"toIntervalDay({lower_n_days}) AND date  <= '{max_date}'::Date - "
-                                     f"toIntervalDay({upper_n_days}) AND timestamp >= '{max_datetime}'::DateTime - "
-                                     f"toIntervalDay({lower_n_days}) AND timestamp  <= '{max_datetime}'::DateTime - "
-                                     f"toIntervalDay({upper_n_days}) GROUP BY system ORDER BY count() DESC LIMIT 10)"
+                                     f"WHERE system != '' AND project = '{project}' GROUP BY system ORDER BY count() DESC LIMIT 10)"
                                      f"GROUP BY period, system ORDER BY period ASC, count DESC;\n")
             snow_queries_file.write(
                 f"SELECT TIME_SLICE(timestamp, {interval}, 'SECOND', 'START') AS period, system['name'] as system_name, "
                 f"count(*) as c FROM pypi WHERE (project = '{project}') AND (timestamp >= DATEADD(days, -{lower_n_days}, "
                 f"'{max_datetime}'::DateTime)) AND timestamp <= DATEADD(days, -{upper_n_days}, '{max_datetime}'::DateTime) "
                 f"AND system_name IN ( SELECT system['name'] as system_name FROM pypi WHERE system_name != '' AND "
-                f"(project = '{project}') AND (timestamp >= DATEADD(days, -{lower_n_days}, '{max_datetime}'::DateTime)) AND "
-                f"timestamp <= DATEADD(days, -{upper_n_days}, '{max_datetime}'::DateTime) GROUP BY system_name ORDER BY "
+                f"(project = '{project}') GROUP BY system_name ORDER BY "
                 f"count(*) DESC LIMIT 10) GROUP BY period, system_name ORDER BY period, c DESC;\n")
 
 
@@ -216,25 +209,22 @@ print('generating downloads per day')
 downloads_per_day(projects, max_datetime, max_date)
 # downloads per day by python version
 print('generating downloads per day by python version')
-downloads_per_day_by_python_version(projects, max_datetime, max_date)
+# downloads_per_day_by_python_version(projects, max_datetime, max_date)
 print('generating downloads per day by system')
 # downloads per day by system
 downloads_per_day_by_system(projects, max_datetime, max_date)
 # top file type per project
 print('generating top file type per project')
 top_file_type_per_project(projects, max_datetime, max_date)
-
 print('generating top projects by distro')
 result = client.query(f"SELECT distro.name FROM pypi WHERE distro.name != '' GROUP BY distro.name "
-                      f"ORDER BY count() DESC LIMIT {num_queries}")
-
+                       f"ORDER BY count() DESC LIMIT {num_queries}")
 distros = [distro[0] for distro in result.result_rows]
 # top projects by distro
 top_projects_by_distro(distros, max_datetime, max_date)
-
+# top sub projects
 print('generating top sub projects')
 result = client.query(
-    f"SELECT splitByChar('-', project)[1] as base from pypi GROUP BY base ORDER BY count() DESC LIMIT {num_queries}")
+     f"SELECT splitByChar('-', project)[1] as base from pypi GROUP BY base ORDER BY count() DESC LIMIT {num_queries}")
 base_projects = [project[0] for project in result.result_rows]
-# top sub projects
 top_sub_projects(base_projects, max_datetime, max_date)

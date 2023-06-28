@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>ClickHouse vs Snowflake - Downloads per Day by Python Version</title>
+    <title>ClickHouse vs Snowflake - Downloads per Day by System</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -295,7 +295,7 @@ const queries = [
 
 <div class="header stick-left">
     <span class="nowrap themes"><span id="toggle-dark">🌚</span><span id="toggle-light">🌞</span></span>
-    <h1>ClickHouse vs Snowflake - Downloads per Day by Python Version</h1>
+    <h1>ClickHouse vs Snowflake - Downloads per Day by System</h1>
     <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Methodology</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Reproduce and Validate the Results</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Add a System</a> | <a href="https://github.com/ClickHouse/clickhouse_vs_snowflake/">Report Mistake</a>
 </div>
 
