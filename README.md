@@ -16,12 +16,19 @@ Todo
 
 ## Limitations
 
+The limitations of this benchmark allow keeping it easy to reproduce and to include more systems in the comparison. The benchmark represents a specific workload to power a real-time analytics application using a single table. 
 
+The following limitations should be acknowledged:
 
-Todo
+- The dataset is represented by one flat table. Snowflake may be better when using multiple tables and joins. 
+- The table consists of 65 billion records. This is rather moderate by modern standards but allows tests to be performed in a reasonable time (and Snowflake credit cost!). The full PYPI dataset is 570 billion records as of June 2023. We encourage anyone, with sufficient $$$, to run this test!
+- The test has been exclusively tested on Snowflake and ClickHouse Cloud - both of which are  multi-node and serverless cloud-native setups. Performance may vary on self-managed ClickHouse nodes.
+- The benchmark runs queries one after another (focusing on absolute latency) and does not test a workload with concurrent requests; neither does it test for system capacity. Every query is run only a few times, and this allows some variability in the results. A more accurate test would run the queries concurrently, thus replicating user behaviour more precisely. We keep queries single threaded for simplicity and to focus on latency. 
+- While we have tried to keep compute comparable, ClickHouse Cloud and Snowflake utilize different node sizes and cpu:memory ratios. This invariably contributes to differences in query latency. We have focused on trying to keep total CPU comparable, giving Snowflake the advantage where possible. We do not expect any queries to be memory intensive - although ClickHouse Cloud often has the advantage with respect to this dimension.
+- We have tried our best to optimize Snowflake. We are ClickHouse experts so would welcome improvements. Improvements should abide by the ethos of keeping resources comparable.
+- We have not considered Snowflake cost when using features (only limiting dataset size to avoid excessive spend). Some features can consume considerable credits (including those such as materialized views which require Enterprise tier). Running all tests is likely to cost approx. $10k. We aim to measure this more precisely in the future.
 
-
-
+Ultimately, the goal of the benchmark is to give the numbers for comparison and let you derive the conclusions on your own.
 
 ### ClickHouse
 
