@@ -31,6 +31,12 @@ if [ -z "$config" ] ; then
   exit 1
 fi
 
+if [[ -z "${QUERY_FILE}" ]]; then
+  QUERY_FILE="clickhouse_queries.sql"
+else
+  echo "using query file ${QUERY_FILE}"
+fi
+
 data_size=$(/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --query="SELECT sum(total_bytes) FROM system.tables WHERE table = 'pypi'")
 now=$(date +'%Y-%m-%d')
 now_epoch=$(date +%s%N)
@@ -39,7 +45,7 @@ echo "{\"system\":\"ClickHouse\",\"date\":\"${now}\",\"machine\":\"${spec}\",\"c
 echo "dropping file system cache"
 /opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --format=Null --query="SYSTEM DROP FILESYSTEM CACHE${on_cluster}"
 
-cat $folder/${QUERY_FILE:=clickhouse_queries.sql} | while read query; do
+cat $folder/${QUERY_FILE} | while read query; do
     echo -n "[" >> $folder/clickhouse_temp_${now_epoch}.json
     for i in $(seq 1 $TRIES); do
         RES=$(/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --time --format=Null --query="${query} ${CLICKHOUSE_SETTINGS};" 2>&1)

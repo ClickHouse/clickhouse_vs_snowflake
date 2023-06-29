@@ -104,11 +104,11 @@ ORDER BY period,
 
 All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT = false;` unless stated. ClickHouse query cache is also disabled and file system cache dropped first.
 
-|      Test Config      |                                                                        ClickHouse                                                                         |                                       Snowflake                                       |
-|:---------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
-|         default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
-|  date_project_cluster |                                                                            NA                                                                             | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
-| prj_cnt_by_prj_system |                                 Projection for speeding up the subquery (see [below](#projection-by-project-and-system))                                  |                                           TODO                                        |
+|     Test Config      |                                                                        ClickHouse                                                                         |                                       Snowflake                                       |
+|:--------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
+|       default        | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
+| date_project_cluster |                                                                            NA                                                                             | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
+|    cnt_by_system     |                                 Projection for speeding up the subquery (see [below](#projection-by-project-and-system))                                  |                      Materialized view for speeding up subquery.                      |
 
 
 ## Optimizations
@@ -263,3 +263,27 @@ CREATE OR REPLACE MATERIALIZED VIEW cnt_by_system AS SELECT project, system['nam
 
 ALTER MATERIALIZED VIEW cnt_by_system CLUSTER BY (project);
 ```
+
+Note how we cluster our materialized view. This can take some time to take effect but should use minimal credits e.g.
+
+```sql
+
+SELECT TO_DATE(start_time) AS date,
+    database_name,
+    schema_name,
+    table_name,
+    SUM(credits_used) AS credits_used
+FROM snowflake.account_usage.automatic_clustering_history
+WHERE start_time >= DATEADD(month,-1,CURRENT_TIMESTAMP())
+GROUP BY 1,2,3,4
+ORDER BY 5 DESC;
+
++------------+---------------+-------------+---------------+---------------+
+| DATE       | DATABASE_NAME | SCHEMA_NAME | TABLE_NAME    |  CREDITS_USED |
+|------------+---------------+-------------+---------------+---------------|
+| 2023-06-28 | PYPI          | PYPI        | CNT_BY_SYSTEM |   5.184381692 |
++------------+---------------+-------------+---------------+---------------+
+1 Row(s) produced. Time Elapsed: 2.828s
+```
+
+To utilize the view we have modified the queries (see `cnt_by_system_snowflake_queries.sql`) to explictly use the materialized view (it is probably possible to avoid this) - thus the test needs to be run using `export QUERY_FILE='cnt_by_system_snowflake_queries.sql''`.

@@ -221,6 +221,9 @@ Each folder contains a specific query set, with a `queries.sql` for both databas
 export CLICKHOUSE_HOST=localhost
 export CLICKHOUSE_USER=default
 export CLICKHOUSE_PASSWORD=
+# optionally, leave unset in most cases
+export QUERY_FILE=
+
 
 ./clickhouse.sh <folder> <cloud> <spec> <config>
 
@@ -241,6 +244,9 @@ export SNOWFLAKE_WAREHOUSE=2XLARGE
 export SNOWFLAKE_ROLE=ACCOUNTADMIN
 export SNOWFLAKE_DB=PYPI
 export SNOWFLAKE_SCHEMA=PYPI
+# optionally, leave unset in most cases
+export SNOWFLAKE_CONNECTION=
+export QUERY_FILE=
 
 # use "spec" to specify warehouse size and "config" to specify any special config e.g. "clustering"
 ./snowflake.sh <folder> <spec> <config>
