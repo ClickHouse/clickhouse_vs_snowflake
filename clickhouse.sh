@@ -37,6 +37,13 @@ else
   echo "using query file ${QUERY_FILE}"
 fi
 
+if [[ -z "${CLICKHOUSE_SETTINGS}" ]]; then
+  CLICKHOUSE_SETTINGS=""
+else
+  echo "using settings ${CLICKHOUSE_SETTINGS}"
+  CLICKHOUSE_SETTINGS="SETTINGS ${CLICKHOUSE_SETTINGS}"
+fi
+
 data_size=$(/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --query="SELECT sum(total_bytes) FROM system.tables WHERE table = 'pypi'")
 now=$(date +'%Y-%m-%d')
 now_epoch=$(date +%s%N)

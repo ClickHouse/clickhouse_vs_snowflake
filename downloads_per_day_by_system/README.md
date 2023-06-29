@@ -286,4 +286,4 @@ ORDER BY 5 DESC;
 1 Row(s) produced. Time Elapsed: 2.828s
 ```
 
-To utilize the view we have modified the queries (see `cnt_by_system_snowflake_queries.sql`) to explictly use the materialized view (it is probably possible to avoid this) - thus the test needs to be run using `export QUERY_FILE='cnt_by_system_snowflake_queries.sql''`.
+To utilize the view we have modified the queries (see `cnt_by_system_snowflake_queries.sql`) to explicitly use the materialized view (it is probably possible to avoid this) - thus the test needs to be run using `export QUERY_FILE='cnt_by_system_snowflake_queries.sql''`.

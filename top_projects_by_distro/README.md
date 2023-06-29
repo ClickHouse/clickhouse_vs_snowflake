@@ -80,11 +80,11 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 Allows all cluster compute to be used for a query i.e. all nodes used vs a single node.
 
 ```sql
-SETTINGS use_hedged_requests = 0, allow_experimental_parallel_reading_from_replicas = 1, max_parallel_replicas = 100, parallel_replicas_single_task_marks_count_multiplier = 5;
+use_hedged_requests = 0, allow_experimental_parallel_reading_from_replicas = 1, max_parallel_replicas = 100, parallel_replicas_single_task_marks_count_multiplier = 5;
 ```
 
 This requires the test to be run with:
 
 ```bash
-export CLICKHOUSE_SETTINGS="SETTINGS use_hedged_requests = 0, allow_experimental_parallel_reading_from_replicas = 1, max_parallel_replicas = 100, parallel_replicas_single_task_marks_count_multiplier = 5;"
+export CLICKHOUSE_SETTINGS="use_hedged_requests = 0, allow_experimental_parallel_reading_from_replicas = 1, max_parallel_replicas = 100, parallel_replicas_single_task_marks_count_multiplier = 5;"
 ```

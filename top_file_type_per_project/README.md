@@ -63,7 +63,7 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 |:--------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
 |        default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections.  |         Default table config and schema. No clustering or materialized views.         |
 | date_project_cluster |                                                                             NA                                                                             | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
-|     file_type_mv     | Materialized View that pre-calculates the count per (project, date, file.type) group. Details [File Type Materialized View](#file-type-materialized-view). |                                          NA                                           |
+|     file_type_mv     | Materialized View that pre-calculates the count per (project, date, file.type) group. Details [File Type Materialized View](#file-type-materialized-view). |                                          Materialized View that pre-calculates the count per (project, date, file.type) group. Details [File Type Materialized View](#file-type-materialized-view).                                           |
 
 
 ## Optimizations
@@ -152,3 +152,41 @@ To use this optimization the queries must be modified. An adapted set of queries
 ```bash
 export QUERY_FILE=file_type_mv_clickhouse_queries.sql
 ```
+
+
+### Snowflake
+
+#### File Type Materialized View 
+
+Materialized View that pre-calculates the count per (project, date, file.type) group. Conceptually similar to above ClickHouse optimization.
+
+```sql
+CREATE OR REPLACE MATERIALIZED VIEW file_type AS SELECT timestamp::Date as date, file['type'] as file_type, project, count(*) as count FROM PYPI.PYPI.PYPI GROUP BY project, date, file_type;
+
+ALTER MATERIALIZED VIEW file_type CLUSTER BY (date, project);
+```
+
+Note how we cluster our materialized view. This can take some time to take effect but should use minimal credits e.g.
+
+
+```sql
+
+SELECT TO_DATE(start_time) AS date,
+    database_name,
+    schema_name,
+    table_name,
+    SUM(credits_used) AS credits_used
+FROM snowflake.account_usage.automatic_clustering_history
+WHERE start_time >= DATEADD(month,-1,CURRENT_TIMESTAMP())
+GROUP BY 1,2,3,4
+ORDER BY 5 DESC;
+
++------------+---------------+-------------+---------------+---------------+
+| DATE       | DATABASE_NAME | SCHEMA_NAME | TABLE_NAME    |  CREDITS_USED |
+|------------+---------------+-------------+---------------+---------------|
+| 2023-06-28 | PYPI          | PYPI        | CNT_BY_SYSTEM |   5.184381692 |
++------------+---------------+-------------+---------------+---------------+
+1 Row(s) produced. Time Elapsed: 2.828s
+```
+
+To utilize the view we have modified the queries (see `file_type_mv_snowflake_queries.sql`) to explicitly use the materialized view (it is probably possible to avoid this but this is a convenience improvement only) - thus the test needs to be run using `export QUERY_FILE='file_type_mv_snowflake_queries.sql''`.
