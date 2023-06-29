@@ -104,11 +104,11 @@ ORDER BY period,
 
 All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT = false;` unless stated. ClickHouse query cache is also disabled and file system cache dropped first.
 
-|     Test Config      |                                                                        ClickHouse                                                                         |                                       Snowflake                                       |
-|:--------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
-|       default        | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
-| date_project_cluster |                                                                            NA                                                                             | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
-|    cnt_by_system     |                                 Projection for speeding up the subquery (see [below](#projection-by-project-and-system))                                  |                      Materialized view for speeding up subquery.                      |
+|     Test Config      |                                                                        ClickHouse                                                                         |                                                      Snowflake                                                      |
+|:--------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------------:|
+|       default        | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |                        Default table config and schema. No clustering or materialized views.                        |
+| date_project_cluster |                                                                            NA                                                                             |                CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect                |
+|    cnt_by_system     |                Projection for speeding up the subquery (see [Projection by project and system](#projection-by-project-and-system))                        | Materialized view for speeding up subquery. See [Materialized view for sub query](#materialized-view-for-sub-query) |
 
 
 ## Optimizations
@@ -254,7 +254,7 @@ ORDER BY create_time DESC
 
 ### Snowflake
 
-#### mv_cnt_by_system
+#### Materialized view for sub query
 
 Materialized view for speeding up the subquery. Conceptually similar to above ClickHouse optimization.
 
