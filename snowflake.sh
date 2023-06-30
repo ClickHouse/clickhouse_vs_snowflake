@@ -62,6 +62,6 @@ sed '$ s/.$//' $folder/snowflake_temp_${now_epoch}.json > $folder/snowflake_resu
 echo ']}' >> $folder/snowflake_results_${now_epoch}.json
 mkdir -p $folder/results
 cat $folder/snowflake_results_${now_epoch}.json | jq > $folder/results/snowflake_${spec}_${config}.json
-rm $folder/snowflake_results_${now_epoch}.json
+#rm $folder/snowflake_results_${now_epoch}.json
 rm $folder/snowflake_temp_${now_epoch}.json
 set +o noglob

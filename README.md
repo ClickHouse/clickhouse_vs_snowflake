@@ -27,6 +27,9 @@ The following limitations should be acknowledged:
 - While we have tried to keep compute comparable, ClickHouse Cloud and Snowflake utilize different node sizes and cpu:memory ratios. This invariably contributes to differences in query latency. We have focused on trying to keep total CPU comparable, giving Snowflake the advantage where possible. We do not expect any queries to be memory intensive - although ClickHouse Cloud often has the advantage with respect to this dimension.
 - We have tried our best to optimize Snowflake. We are ClickHouse experts so would welcome improvements. Improvements should abide by the ethos of keeping resources comparable.
 - We have not considered Snowflake cost when using features (only limiting dataset size to avoid excessive spend). Some features can consume considerable credits (including those such as materialized views which require Enterprise tier). Running all tests is likely to cost approx. $10k. We aim to measure this more precisely in the future.
+- We use a production instance of a ClickHouse Cloud cluster for our examples with a total of 180, 240 or 256 cores over 3 nodes.
+- For Snowflake we have predominantly used either a 2XLARGE or 4XLARGER cluster, possessing 256 and 512 cores respectively - the former representing the closest configuration to the above ClickHouse specification. These configurations can be expensive - loading the dataset itself is around $1500 in Snowflake before clustering optimizations are applied. Users can again choose to load subsets to reduce this cost and/or run a limited number of the benchmarks. 
+- While the above configurations provide an obvious compute advantage over the above ClickHouse cluster, ClickHouse has a greater cpu:memory ratio offsetting some of this advantage. We have attempted to avoid memory intensive queries as a result but acknowledge these differences make full comparison challenging. Other differences include local disk sizes, causing variability in FS caching.
 
 Ultimately, the goal of the benchmark is to give the numbers for comparison and let you derive the conclusions on your own.
 
@@ -75,7 +78,7 @@ SELECT
     tls_protocol,
     tls_cipher
 FROM s3Cluster('default', 'https://storage.googleapis.com/clickhouse_public_datasets/pypi/file_downloads/2023/*.parquet', 'Parquet', 'timestamp DateTime64(6), country_code LowCardinality(String), url String, project String, `file.filename` String, `file.project` String, `file.version` String, `file.type` String, `installer.name` String, `installer.version` String, python String, `implementation.name` String, `implementation.version` String, `distro.name` String, `distro.version` String, `distro.id` String, `distro.libc.lib` String, `distro.libc.version` String, `system.name` String, `system.release` String, cpu String, openssl_version String, setuptools_version String, rustc_version String,tls_protocol String, tls_cipher String')
-SETTINGS input_format_parquet_import_nested = 1, input_format_parquet_import_nested = 1, max_insert_block_size = 100000000, min_insert_block_size_rows = 100000000, min_insert_block_size_bytes = 500000000, parts_to_throw_insert = 50000, max_insert_threads = 16
+SETTINGS input_format_null_as_default = 1, input_format_parquet_import_nested = 1, max_insert_block_size = 100000000, min_insert_block_size_rows = 100000000, min_insert_block_size_bytes = 500000000, parts_to_throw_insert = 50000, max_insert_threads = 16
 ```
 
 See specific sub folders for potential schema optimizations for each query type.
