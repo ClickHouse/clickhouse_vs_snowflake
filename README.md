@@ -30,6 +30,7 @@ The following limitations should be acknowledged:
 - We use a production instance of a ClickHouse Cloud cluster for our examples with a total of 180, 240 or 256 cores over 3 nodes.
 - For Snowflake we have predominantly used either a 2XLARGE or 4XLARGER cluster, possessing 256 and 512 cores respectively - the former representing the closest configuration to the above ClickHouse specification. These configurations can be expensive - loading the dataset itself is around $1500 in Snowflake before clustering optimizations are applied. Users can again choose to load subsets to reduce this cost and/or run a limited number of the benchmarks. 
 - While the above configurations provide an obvious compute advantage over the above ClickHouse cluster, ClickHouse has a greater cpu:memory ratio offsetting some of this advantage. We have attempted to avoid memory intensive queries as a result but acknowledge these differences make full comparison challenging. Other differences include local disk sizes, causing variability in FS caching.
+- no multi-cluster
 
 Ultimately, the goal of the benchmark is to give the numbers for comparison and let you derive the conclusions on your own.
 
