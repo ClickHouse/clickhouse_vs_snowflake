@@ -56,9 +56,10 @@ ORDER BY period ASC;
 
 All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT = false;` unless stated. ClickHouse query cache is also disabled and file system cache dropped first.
 
-|        Test Config         |                                                                        ClickHouse                                                                         |                                                  Snowflake                                                  |
-|:--------------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------:|
-|          default           | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |                    Default table config and schema. No clustering or materialized views.                    |
+|    Test Config     |                                                                        ClickHouse                                                                         |                                                  Snowflake                                                  |
+|:------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------:|
+|      default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |                    Default table config and schema. No clustering or materialized views.                    |
+| default_with_delta |                                              Same as default but delta encodec on timestamp and date fields                                               |                                                     NA                                                      |
 |      project_cluster       |                                                                            NA                                                                             |                     CLUSTER BY (project). Automatic clustering allowed to take effect.                      |
 |    date_project_cluster    |                                                                            NA                                                                             |            CLUSTER BY (to_date(timestamp), project). Automatic clustering allowed to take effect            |
 | project_timestamp_cluster  |                                                                            NA                                                                             |                CLUSTER BY (project, timestamp). Automatic clustering allowed to take effect                 |
@@ -117,10 +118,44 @@ ORDER BY 5 DESC;
 
 ## ClickHouse
 
+### Use of date field
+
+
+The default configuration materializes the `date` field as a column which is included in the primary key. This reduces the amount of data to be read by 1/4 as filtering is first performed on `date` (2 bytes per value) and then `timestamp` (4 bytes per value).
+
 ### Caching
 
 To compare to Snowflake's cached result we can enable the [query cache](https://clickhouse.com/docs/en/operations/query-cache) in ClickHouse. Do this by setting the following environment variable prior to running tests.
 
 ```bash
 export CLICKHOUSE_SETTINGS="use_query_cache = true, query_cache_min_query_duration = 0, query_cache_min_query_runs = 0,query_cache_ttl = 3600"
+```
+
+### Delta codec
+
+Applied to `timestamp` and `date` field to reduce storage i.e.
+
+```sql
+CREATE TABLE pypi
+(
+    `timestamp` DateTime64(6) CODEC(Delta, ZSTD),
+    `date` Date MATERIALIZED timestamp CODEC(Delta, ZSTD),
+    `country_code` LowCardinality(String),
+    `url` String,
+    `project` String,
+    `file` Tuple(filename String, project String, version String, type Enum8('bdist_wheel' = 0, 'sdist' = 1, 'bdist_egg' = 2, 'bdist_wininst' = 3, 'bdist_dumb' = 4, 'bdist_msi' = 5, 'bdist_rpm' = 6, 'bdist_dmg' = 7)),
+    `installer` Tuple(name LowCardinality(String), version LowCardinality(String)),
+    `python` LowCardinality(String),
+    `implementation` Tuple(name LowCardinality(String), version LowCardinality(String)),
+    `distro` Tuple(name LowCardinality(String), version LowCardinality(String), id LowCardinality(String), libc Tuple(lib Enum8('' = 0, 'glibc' = 1, 'libc' = 2), version LowCardinality(String))),
+    `system` Tuple(name LowCardinality(String), release String),
+    `cpu` LowCardinality(String),
+    `openssl_version` LowCardinality(String),
+    `setuptools_version` LowCardinality(String),
+    `rustc_version` LowCardinality(String),
+    `tls_protocol` Enum8('TLSv1.2' = 0, 'TLSv1.3' = 1),
+    `tls_cipher` Enum8('ECDHE-RSA-AES128-GCM-SHA256' = 0, 'ECDHE-RSA-CHACHA20-POLY1305' = 1, 'ECDHE-RSA-AES128-SHA256' = 2, 'TLS_AES_256_GCM_SHA384' = 3, 'AES128-GCM-SHA256' = 4, 'TLS_AES_128_GCM_SHA256' = 5, 'ECDHE-RSA-AES256-GCM-SHA384' = 6, 'AES128-SHA' = 7, 'ECDHE-RSA-AES128-SHA' = 8)
+)
+ENGINE = ReplicatedMergeTree
+ORDER BY (project, date, timestamp)
 ```
