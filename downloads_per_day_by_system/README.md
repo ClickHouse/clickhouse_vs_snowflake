@@ -116,12 +116,14 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 
 ## Optimizations
 
+The subquery identifying the top systems for a project is an ideal candidate to optimize with a projection in ClickHouse and materialized view in Snowflake. 
+For both systems, this simply means using the query without a LIMIT. The count for each system by project will in turn be pre-computed, and in both cases automatically used as required when querying the original table.
+
 ### ClickHouse
 
 #### Projection by project and system
 
 Projection for speeding up the subquery.
-
 
 ```sql
 
@@ -257,6 +259,8 @@ ORDER BY create_time DESC
 
 ### Snowflake
 
+The subquery identifying the top systems for a project is an ideal candidate to optimize with a projection in ClickHouse and materialized view in Snowflake. For both systems, this simply means using the query without a LIMIT. The count for each system by project will in turn be pre-computed, and in both cases automatically used as required when querying the original table. 
+
 #### Materialized view for sub query
 
 Materialized view for speeding up the subquery. Conceptually similar to above ClickHouse optimization.
@@ -267,7 +271,9 @@ CREATE OR REPLACE MATERIALIZED VIEW cnt_by_system AS SELECT project, system['nam
 ALTER MATERIALIZED VIEW cnt_by_system CLUSTER BY (project);
 ```
 
-Note how we cluster our materialized view. This can take some time to take effect. Not this can incur additional credits in both maintenance and clustering:
+Note how we cluster our materialized view by project for optimal performance. This can take some time to take effect. Not this can incur additional credits in both maintenance and clustering.
+
+_Adding system_name to the cluster key is not supported in Snowflake as the key of an OBJECT type. Given the small values, and filtering by project only, this is also unnecessary._
 
 ```sql
 SELECT TO_DATE(start_time) AS date,
@@ -305,3 +311,29 @@ ORDER BY 5 DESC;
 ```
 
 To utilize the view we have modified the queries (see `cnt_by_system_snowflake_queries.sql`) to explicitly use the materialized view (it is probably possible to avoid this) - thus the test needs to be run using `export QUERY_FILE='cnt_by_system_snowflake_queries.sql''`.
+
+## Results
+
+Full results [here](./results).
+
+### Hot queries
+
+![hot_results.png](hot_results.png)
+
+![hot_results_chart.png](hot_results_chart.png)
+
+**ClickHouse is at least 2x faster across all metrics for this query.**
+
+### Materialized views and projections
+
+**Hot results only**
+
+![projections_materialized_results.png](projections_materialized_results.png)
+
+![projections_materialized_chart.png](projections_materialized_chart.png)
+
+Observations:
+
+- For ClickHouse the above optimization improves the mean by only 10%, but has a significant impact on the 95th and 99th percentile - reducing them by 15% and 20% respectively. 
+- While Snowflake experiences an approximately 50% improvement across metrics, this is insufficient to overcome ClickHouse which is still around 1.5x faster.
+
