@@ -105,6 +105,8 @@ Below we show the performance benefit of enabling parallel replicas for ClickHou
 
 ![results_clickhouse_parallel.png](results_clickhouse_parallel.png)
 
+![results_clickhouse_parallel_chart.png](results_clickhouse_parallel_chart.png)
+
 Observations:
 
 - In both the hot and cold case, our queries times are around 3x faster. This is expected, since all 3 nodes are used for the aggregation and shows the power of parallel replicas for queries where more data needs to be scanned.
@@ -117,3 +119,10 @@ Parallel replicas are enabled for all results.
 
 ![results.png](results.png)
 
+![results_chart.png](results_chart.png)
+
+Observations:
+
+- For ClickHouse, the best performance is achieved using the largest 1024GB service with 256 cores (the same as Snowflake). 
+- For these queries Snowflake is faster by around 30%. This can be attributed to the experimental nature of the parallel replicas feature, with it undergoing active development to improve performance. 
+- Snowflake performs well on queries which can be distributed to many nodes and are required to scan significant volumes of data.
