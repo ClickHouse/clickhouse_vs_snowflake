@@ -10,11 +10,11 @@ Goals similar to [ClickBench](https://github.com/ClickHouse/ClickBench#goals).
 
 ### Dataset
 
-The PYPI dataset is currently available as a [public table in BigQuery.](https://packaging.python.org/en/latest/guides/analyzing-pypi-package-downloads/#id10)  Each row in this dataset represents the download of a python package by a user e.g. using pip. We have exported this data as Parquet files, making it available in the public gcs bucket `gcs://clickhouse_public_datasets/pypi/file_downloads`. The steps for this are available here. The original schema for this dataset is shown below. Due to the nested structures, Parquet was chosen as the optimal export format.
+The PYPI dataset is currently available as a [public table in BigQuery.](https://packaging.python.org/en/latest/guides/analyzing-pypi-package-downloads/#id10)  Each row in this dataset represents the download of a python package by a user e.g. using pip. We have exported this data as Parquet files, making it available in the public gcs bucket `gcs://clickhouse_public_datasets/pypi/file_downloads`. The steps for this are available [here](https://pastila.nl/?001e53a9/e2bebfba9b6badf525a355868fdc3463). The original schema for this dataset is shown below. Due to the nested structures, Parquet was chosen as the optimal export format.
 
 ![schema.png](schema.png)
 
-In order to provide a more usable subset for our tests, we exported only the last three months as of 23/06/2023. To [conform to Snowflake's best practices](https://www.snowflake.com/blog/best-practices-for-data-ingestion/) when loading Parquet files, we targeted file sizes between 100 MB and 150 MB. To achieve this, BigQuery requires the table to be copied and re-partitioned before exporting. Using the steps here, we were able to export 8.74TiB of data as 70608 files with an average size of 129 MB.
+In order to provide a more usable subset for our tests, we exported only the last three months as of 23/06/2023. To [conform to Snowflake's best practices](https://www.snowflake.com/blog/best-practices-for-data-ingestion/) when loading Parquet files, we targeted file sizes between 100 MB and 150 MB. To achieve this, BigQuery requires the table to be copied and re-partitioned before exporting. Using the steps [here](https://pastila.nl/?001e53a9/e2bebfba9b6badf525a355868fdc3463), we were able to export 8.74TiB of data as 70608 files with an average size of 129 MB.
 
 ### Application
 
