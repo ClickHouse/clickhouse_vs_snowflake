@@ -100,3 +100,20 @@ export CLICKHOUSE_SETTINGS="use_hedged_requests = 0, allow_experimental_parallel
 
 ## Results
 
+### Enabling Parallel Replicas for ClickHouse
+Below we show the performance benefit of enabling parallel replicas for ClickHouse using the original 708 GB service and ordering key of `project, date, timestamp`. This service contains a total of 177 vCPUs spread over 3 cores.
+
+![results_clickhouse_parallel.png](results_clickhouse_parallel.png)
+
+Observations:
+
+- In both the hot and cold case, our queries times are around 3x faster. This is expected, since all 3 nodes are used for the aggregation and shows the power of parallel replicas for queries where more data needs to be scanned.
+
+### ClickHouse vs Snowflake
+
+In our previous queries, the date and timestamp columns were the 2nd and 3rd entries in our ClickHouse ordering key respectively (with project 1st) - unlike Snowflake where it was beneficial to have the date first. In this workload we have no project filter. We thus optimize this workload using a `date,timestamp` ordering key in ClickHouse to align with Snowflake. 
+
+Parallel replicas are enabled for all results.
+
+![results.png](results.png)
+

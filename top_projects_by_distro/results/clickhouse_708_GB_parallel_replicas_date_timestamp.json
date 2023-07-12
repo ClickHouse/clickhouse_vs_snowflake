@@ -1,7 +1,7 @@
 {
   "system": "ClickHouse",
   "date": "2023-07-05",
-  "machine": "720_GB",
+  "machine": "708_GB",
   "config": "parallel_replicas_date_timestamp",
   "comment": "",
   "tags": [

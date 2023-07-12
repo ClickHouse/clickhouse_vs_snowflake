@@ -238,7 +238,7 @@ export QUERY_FILE=
 
 e.g.
 
-./clickhouse.sh downloads_per_day true "720_GB" "default"
+./clickhouse.sh downloads_per_day true "708_GB" "default"
 ```
 
 Ensure any test runs are documented in the respective folders `README.md`, providing an explanation of the spec and config.

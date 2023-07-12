@@ -1,7 +1,7 @@
 {
   "system": "ClickHouse",
   "date": "2023-06-29",
-  "machine": "720_GB",
+  "machine": "708_GB",
   "config": "cnt_by_system",
   "comment": "",
   "tags": [
