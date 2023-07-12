@@ -13,6 +13,12 @@ We have extended this list of 20 with `mysql`, `postgres`, `snowflake`, `elastic
 - A narrower time filter is then applied to a random time frame (same random values for both databases). 
 - This simulates a user viewing top sub-projects for a term over a time period, and then drilling down to a specific set of days.
 
+This test, while filtering on the project column, is unable to exploit the primary key fully due to the use of the LIKE operator e.g. `project LIKE '%clickhouse%'`. 
+
+This provides an opportunity to utilize ClickHouse secondary indices to accelerate queries. More specifically, we use the bloom filter index to the project column. This indexes n-grams for the strings to accelerate LIKE comparisons. 
+
+We contrast this with ClickHouse’s [search optimization service](https://docs.snowflake.com/en/user-guide/search-optimization-service#substrings-and-regular-expressions) which can also be used to improve LIKE queries.
+
 ## Queries 
 
 ## ClickHouse
@@ -83,7 +89,10 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 ### ClickHouse
 
 #### Bloom filter
+
 Bloom filter on project column to speed up LIKE.
+
+Our tests indicate this adds around 81.75MB to our total storage size (compressed). Even uncompressed the overhead is minimal at 7.61GB.
 
 ```sql
 ALTER TABLE pypi_bloom
@@ -171,10 +180,18 @@ This can be enabled on the project column e.g.
 ALTER TABLE PYPI ADD SEARCH OPTIMIZATION ON SUBSTRING(project);
 ```
 
-Note this will incur additional charges i.e.
-
-```sql
+Note this will incur additional charges which can be estimated via the [SYSTEM$ESTIMATE_SEARCH_OPTIMIZATION_COSTS](https://docs.snowflake.com/en/sql-reference/functions/system_estimate_search_optimization_costs) table.
 
 
+## Results
 
-```
+![results.png](results.png)
+
+![result_charts.png](result_charts.png)
+
+Observations:
+
+- Without the bloom filter, Snowflake and ClickHouse perform similarly for the LIKE queries - with Snowflake even outperforming ClickHouse on the 95th and 99th percentile by up to 30%.
+- ClickHouse Bloom filters improve performance for the mean by almost 10x and higher percentiles by at least 2x for both hot and cold queries.
+- This ensures ClickHouse comfortably outperforms Snowflake across all metrics with at minimum 1.5x the performance and 9x for the average case. The bloom filter also incurs no additional charges beyond a very small increase in storage.
+- The search optimization service significantly improves Snowflake’s performance. While still slower on average than ClickHouse for hot queries, when using the bloom filter, it is faster for cold queries and 99th percentiles. As noted in our cost analysis, however, this comes at a significant cost that makes it almost not viable to use.

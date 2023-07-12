@@ -5,6 +5,13 @@
 - Uses the top 25 distros.
 - Issues a subsequent query filtering by a random timeframe (same for each).
 
+The focus here is performance when filtering by a non-clustered or ordered column. This is not a complete linear scan, as we are still filtering by date/timestamp, but expected performance to be much slower. 
+
+These queries will therefore benefit from distributing computation across all nodes in the cluster (by default ClickHouse uses the receiving node only). 
+
+In Snowflake, this is performed by default. 
+
+In ClickHouse Cloud this requires us to use parallel replicas. This feature allows the work for an aggregation query to be spread across all nodes in the cluster, reading from the same shard. 
 
 ## Queries 
 
@@ -90,3 +97,6 @@ This requires the test to be run with:
 ```bash
 export CLICKHOUSE_SETTINGS="use_hedged_requests = 0, allow_experimental_parallel_reading_from_replicas = 1, max_parallel_replicas = 100, parallel_replicas_single_task_marks_count_multiplier = 5;"
 ```
+
+## Results
+
