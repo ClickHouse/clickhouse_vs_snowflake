@@ -162,7 +162,7 @@ ORDER BY (project, date, timestamp)
 
 ## Results
 
-Full results [here](./results).
+Full results [here](./index.html).
 
 ### Hot queries
 

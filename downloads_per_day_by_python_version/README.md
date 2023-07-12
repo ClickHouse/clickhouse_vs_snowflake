@@ -81,6 +81,8 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 
 ## Results
 
+Full results [here](./index.html).
+
 We used the clustering key `to_date(timestamp), project` for Snowflake in these tests. When considering compression, hot and cold performance, and response time on both the initial and drill down query this performs well.
 
 ![results.png](results.png)

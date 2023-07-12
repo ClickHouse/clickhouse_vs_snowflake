@@ -8,10 +8,45 @@ Goals similar to [ClickBench](https://github.com/ClickHouse/ClickBench#goals).
 
 ## Use case and dataset 
 
+### Dataset
 
+The PYPI dataset is currently available as a [public table in BigQuery.](https://packaging.python.org/en/latest/guides/analyzing-pypi-package-downloads/#id10)  Each row in this dataset represents the download of a python package by a user e.g. using pip. We have exported this data as Parquet files, making it available in the public gcs bucket `gcs://clickhouse_public_datasets/pypi/file_downloads`. The steps for this are available here. The original schema for this dataset is shown below. Due to the nested structures, Parquet was chosen as the optimal export format.
 
-Todo
+![schema.png](schema.png)
 
+In order to provide a more usable subset for our tests, we exported only the last three months as of 23/06/2023. To [conform to Snowflake's best practices](https://www.snowflake.com/blog/best-practices-for-data-ingestion/) when loading Parquet files, we targeted file sizes between 100 MB and 150 MB. To achieve this, BigQuery requires the table to be copied and re-partitioned before exporting. Using the steps here, we were able to export 8.74TiB of data as 70608 files with an average size of 129 MB.
+
+### Application
+
+Analytics over such a large dataset would typically be challenging. We propose a simple service where users can enter a package name’s name and retrieve a selection of analytics, ideally rendered as charts, for the package. This includes, but is not limited to:
+
+1. Downloads over time possibly render as a line chart.
+2. Downloads over time per Python version, rendered as a multi-series line chart.
+3. Downloads over time per system, e.g., Linux, rendered as a multi-series line chart.
+4. Top distribution types for the project, e.g., [sdist or bdist](https://dev.to/icncsx/python-packaging-sdist-vs-bdist-5ekb), rendered as a pie or bar.
+
+In addition, the application might allow the user to identify:
+
+1. Total downloads for related sub-projects (if they exist) for a technology, e.g., [`clickhouse-connect`](https://github.com/ClickHouse/clickhouse-connect) for ClickHouse.
+2. Top projects for a specific distro, e.g. Ubuntu.
+
+This might look something like the following:
+
+![application.png](application.png)
+
+The above represents a straightforward real-time application with many enhancement possibilities. 
+
+While real-time analytics applications are typically more complex than this, the above allows us to model the query workload fairly easily. 
+
+Each of the above charts can be rendered with a simple SQL statement, requiring a project filter. Assuming we also allow the user to drill down on a date period, updating the charts, we can evaluate the query performance of both Snowflake and ClickHouse for this application.
+
+In our benchmark, we model this workload in its simplest form:
+
+- We devise a SQL query for each chart representing the initial rendering when a user types a project. 
+- A subsequent query then filters the chart on a random date range. 
+- Queries for both systems use the same dates and projects, executed in the same order for fairness. 
+- We execute these queries with a single thread, one after another (focusing on absolute latency). 
+- This does not test a workload with concurrent requests; neither does it test for system capacity. Every query is run only a few times, and this allows some variability in the results. A more accurate test would run the queries concurrently, thus replicating user behavior more precisely. We keep queries single-threaded for simplicity and to focus on latency.
 
 
 ## Limitations
@@ -212,6 +247,9 @@ More [here](./top_file_type_per_project/README.md)
 
 #### Top projects by distro
 
+Aims to test building a pie chart where filtering is performed a non-primary key (`distro.name`). The focus here is performance when filtering by a non-clustered or ordered column. This is not a complete linear scan, as we are still filtering by date/timestamp, but expected performance to be much slower. 
+
+More [here](./top_projects_by_distro/README.md)
 
 #### Top sub projects
 
@@ -267,7 +305,7 @@ e.g.
 
 Ensure any test runs are documented in the respective folders `README.md`, providing an explanation of the spec and config.
 
-### Producing results
+### Reproducing results
 
 A summary page can be generated for each query set. Ensure you have run the tests for both ClickHouse and Snowflake and a results file has been generated for each.
 

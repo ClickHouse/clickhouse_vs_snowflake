@@ -192,6 +192,8 @@ To utilize the view we have modified the queries (see `file_type_mv_snowflake_qu
 
 ## Results
 
+Full results [here](./index.html).
+
 ![results.png](results.png)
 
 ![result_charts.png](result_charts.png)

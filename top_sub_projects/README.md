@@ -182,8 +182,9 @@ ALTER TABLE PYPI ADD SEARCH OPTIMIZATION ON SUBSTRING(project);
 
 Note this will incur additional charges which can be estimated via the [SYSTEM$ESTIMATE_SEARCH_OPTIMIZATION_COSTS](https://docs.snowflake.com/en/sql-reference/functions/system_estimate_search_optimization_costs) table.
 
-
 ## Results
+
+Full results [here](./index.html).
 
 ![results.png](results.png)
 

@@ -314,7 +314,7 @@ To utilize the view we have modified the queries (see `cnt_by_system_snowflake_q
 
 ## Results
 
-Full results [here](./results).
+Full results [here](./index.html).
 
 ### Hot queries
 

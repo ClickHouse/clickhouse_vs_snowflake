@@ -100,6 +100,8 @@ export CLICKHOUSE_SETTINGS="use_hedged_requests = 0, allow_experimental_parallel
 
 ## Results
 
+Full results [here](./index.html).
+
 ### Enabling Parallel Replicas for ClickHouse
 Below we show the performance benefit of enabling parallel replicas for ClickHouse using the original 708 GB service and ordering key of `project, date, timestamp`. This service contains a total of 177 vCPUs spread over 3 cores.
 
