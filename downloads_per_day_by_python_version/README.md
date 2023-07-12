@@ -56,7 +56,6 @@ GROUP BY DAY,
 ORDER BY DAY ASC, major ASC;
 
 -- random filter on time period using same project as above.
-
 SELECT TIME_SLICE(timestamp, 44928, 'SECOND', 'START') AS period,
        SPLIT(python, '.')[0] || '.' || SPLIT(python, '.')[1] AS major,
        count(*) AS c

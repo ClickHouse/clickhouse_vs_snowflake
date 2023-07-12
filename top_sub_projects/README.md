@@ -4,7 +4,7 @@
 - Sub-projects are those that are related to a core technology e.g. `mysql`. These are identified by using `project ILIKE %<term>%`, where `<term`> is selected from a list. This list is identified by taking the top 20 prefixes of names with `-` in their name i.e.
 
 ```sql
-SELECT splitByChar('-', project)[1] as base from pypi GROUP BY base ORDER BY count() DESC LIMIT 100
+SELECT splitByChar('-', project)[1] as base from pypi GROUP BY base ORDER BY count() DESC LIMIT 20
 ```
 
 We have extended this list of 20 with `mysql`, `postgres`, `snowflake`, `elasticsearch` and `clickhouse`  for fun.
@@ -23,7 +23,7 @@ SELECT
     project,
     count() AS c
 FROM pypi
-WHERE (project ILIKE '%google%') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90)))
+WHERE (project LIKE '%google%') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90)))
 GROUP BY project
 ORDER BY c DESC
 LIMIT 10
@@ -33,7 +33,7 @@ SELECT
     project,
     count() AS c
 FROM pypi
-WHERE (project ILIKE '%google%') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(35))) AND 
+WHERE (project LIKE '%google%') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(35))) AND 
       (date <= (CAST('2023-06-23', 'Date') - toIntervalDay(15))) AND 
       (timestamp >= (CAST('2023-06-23 08:33:59', 'DateTime') - toIntervalDay(35))) AND 
       (timestamp <= (CAST('2023-06-23 08:33:59', 'DateTime') - toIntervalDay(15)))
@@ -49,7 +49,7 @@ LIMIT 10
 SELECT project,
        count(*) c
 FROM pypi
-WHERE project ILIKE '%google%'
+WHERE project LIKE '%google%'
   AND (timestamp >= DATEADD(days, -90, '2023-06-23'::Date))
 GROUP BY project
 ORDER BY c DESC
@@ -59,7 +59,7 @@ LIMIT 10;
 SELECT project,
        count(*) c
 FROM pypi
-WHERE project ILIKE '%google%'
+WHERE project LIKE '%google%'
   AND (timestamp >= DATEADD(days, -35, '2023-06-23 08:33:59'::DateTime))
   AND timestamp <= DATEADD(days, -15, '2023-06-23 08:33:59'::DateTime)
 GROUP BY project
@@ -71,11 +71,12 @@ LIMIT 10;
 
 All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT = false;` unless stated. ClickHouse query cache is also disabled and file system cache dropped first.
 
-|      Test Config     |                                                                        ClickHouse                                                                         |                                       Snowflake                                       |
+|     Test Config      |                                                                        ClickHouse                                                                         |                                       Snowflake                                       |
 |:--------------------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------:|
-|        default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
+|       default        | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
 | date_project_cluster |                                                                            NA                                                                             | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
-|     bloom_filter     |                           Bloom filter on project column to speed up LIKE. See optimizations below. See [below](#bloom-filter)                            |                                           NA                                          |
+|     bloom_filter     |                           Bloom filter on project column to speed up LIKE. See optimizations below. See [below](#bloom-filter)                            |                                          NA                                           |
+|   search_optimized   |                                                                            NA                                                                             |                          Search optimization service enabled                          |
 
 ## Optimizations
 
@@ -160,3 +161,20 @@ LIMIT 10
 -- 25 times less granules
 ```
 
+### Snowflake
+
+#### Search optimization service
+
+This can be enabled on the project column e.g.
+
+```sql
+ALTER TABLE PYPI ADD SEARCH OPTIMIZATION ON SUBSTRING(project);
+```
+
+Note this will incur additional charges i.e.
+
+```sql
+
+
+
+```

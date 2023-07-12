@@ -1,7 +1,7 @@
 # Downloads Per Day
 
 - Aims to test rendering and filtering of a line chart showing downloads for a project over time.
-- This test aggregates downloads by day for the last 90 days, filtering by a project. A narrower time filter is then applied to a random time frame (same random values for both databases).
+- This test aggregates downloads by day for the last 90 days, filtering by a project. A narrower time filter is then applied to a random time frame (same random values for both databases), grouping by an interval which produces around 100 buckets (so any chart points render sensibly).
 - By default, this uses the 100 most popular projects, for a total of 200 queries.
 - This simulates a user viewing an overview of downloads for a project (e.g. as a line chart) before drilling down on a timeframe.
 
@@ -116,14 +116,14 @@ GROUP BY 1,2,3,4
 ORDER BY 5 DESC;
 ```
 
-## ClickHouse
+### ClickHouse
 
-### Use of date field
+#### Use of date field
 
 
 The default configuration materializes the `date` field as a column which is included in the primary key. This reduces the amount of data to be read by 1/4 as filtering is first performed on `date` (2 bytes per value) and then `timestamp` (4 bytes per value).
 
-### Caching
+#### Caching
 
 To compare to Snowflake's cached result we can enable the [query cache](https://clickhouse.com/docs/en/operations/query-cache) in ClickHouse. Do this by setting the following environment variable prior to running tests.
 
@@ -131,7 +131,7 @@ To compare to Snowflake's cached result we can enable the [query cache](https://
 export CLICKHOUSE_SETTINGS="use_query_cache = true, query_cache_min_query_duration = 0, query_cache_min_query_runs = 0,query_cache_ttl = 3600"
 ```
 
-### Delta codec
+#### Delta codec
 
 Applied to `timestamp` and `date` field to reduce storage i.e.
 
@@ -159,3 +159,56 @@ CREATE TABLE pypi
 ENGINE = ReplicatedMergeTree
 ORDER BY (project, date, timestamp)
 ```
+
+## Results
+
+Full results [here](./results).
+
+### Hot queries
+
+The results are summarized below for hot queries (all timings in seconds and best performing highlighted):
+
+![hot_results.png](hot_results.png)
+
+Relative time here is a measure of the average performance relative to the best response time, across all configurations and queries. 
+
+
+![hot_results_chart.png](hot_results_chart.png)
+
+Observations:
+
+- Clustering is clearly critical to Snowflake performance for real-time analytics, with an average response time and relative performance of 7s and 44x for non-clustered performance. 
+- For clusters with comparable resources, ClickHouse outperforms Snowflake by at least 3x on the mean and 2x on the 95th and 99th percentile. 
+- ClickHouse with 177 cores even outperforms a 4XLARGE Snowflake warehouse with 1024 cores. This suggests our specific workload gains no benefit from no further parallelization.  
+
+The use of the single clustering key `project` also offers marginally better performance than `project, to_date(timestamp)` despite poorer compression. This can be attributed to faster performance on only the initial query for each project, which queries the entire 90 days. Drill down queries are slower, as shown below, if we limit analysis to only the 2nd drill-down query for each project. 
+
+![chart_specific_keys.png](chart_specific_keys.png) 
+
+### Caching performance
+
+Results for Snowflake’s query cache vs ClickHouse’s equivalent feature.
+
+![cache_performance.png](cache_performance.png)
+
+![img.png](cache_chart.png)
+
+Observations:
+
+- While the ClickHouse cache delivers a faster mean response time, Snowflake does provide a better distribution of values with lower 95th, 99th and max values. We attribute this to ClickHouse’s cache being local to each node and load balancing of queries i.e. we provide no guarantee a query is serviced by node on which it has been cached already. 
+- Snowflake likely benefits here from having a distributed cache at its service layer, independent of the nodes. While this may deliver a slightly high mean response time, it is more consistent in its performance. 
+- In a production scenario changing data would invalidate these cache benefits in most real-time analytics use cases.
+
+### Cold performance
+
+In real-time analytics use cases, cache misses are inevitable and often the cause of 95th and 99th percentile outliers. In this case, ClickHouse Cloud benefits from greater memory to cpu ratio as well as higher compression - both helping to keep more of the data local to the nodes and resulting in faster response times. This is confirmed if we look at cold queries only:
+
+![cold_results.png](cold_results.png)
+
+![img.png](cold_results_chart.png)
+
+Observations:
+
+- For cold queries, ClickHouse clearly outperforms Snowflake by 1.5 to 2x depending on the metric. 
+- Our Snowflake project only key again performs favorably for the initial full date range queries, slightly skewing the metrics. (project, timestamp) also performs well for cold queries (unlike hot queries) despite being against Snowflake best practices.
+- The use of the delta codec in the ClickHouse schema appears to negatively impact cold performance.

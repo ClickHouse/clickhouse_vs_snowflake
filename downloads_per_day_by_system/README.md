@@ -4,7 +4,7 @@
 - This test aggregates downloads by day for the last 90 days, grouping by system and filtering by a project. The higher cardinality of system requires us to filter by the top 10 values for each project - this is achieved though a sub-query. 
 - A narrower time filter is then applied to a random time frame (same random values for both databases).
 - By default, this uses the 100 most popular projects, for a total of 200 queries.
-- This simulates a user viewing an overview of downloads for a project grouped by minor python version (e.g. as a multi-series line chart) before drilling down on a timeframe.
+- This simulates a user viewing an overview of downloads for a project grouped by system (e.g. as a multi-series line chart) before drilling down on a timeframe.
 
 
 ## Queries 
@@ -19,6 +19,7 @@ SELECT
     count() AS count
 FROM pypi
 WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(90))) AND (system IN (
+    -- sub query reading top 10 systems for the project
     SELECT system.name AS system
     FROM pypi
     WHERE (system != '') AND (project = 'boto3')
@@ -40,6 +41,7 @@ SELECT
     system.name AS system
 FROM pypi
 WHERE (project = 'boto3') AND (date >= (CAST('2023-06-23', 'Date') - toIntervalDay(84))) AND (date <= (CAST('2023-06-23', 'Date') - toIntervalDay(39))) AND (timestamp >= (CAST('2023-06-23 08:33:59', 'DateTime') - toIntervalDay(84))) AND (timestamp <= (CAST('2023-06-23 08:33:59', 'DateTime') - toIntervalDay(39))) AND (system IN (
+   -- sub query reading top 10 systems for the project
     SELECT system.name AS system
     FROM pypi
     WHERE (system != '') AND (project = 'boto3')
@@ -66,6 +68,7 @@ FROM pypi
 WHERE (project = 'boto3')
   AND (timestamp >= DATEADD(days, -90, '2023-06-23'::Date))
   AND system_name IN
+  -- sub query reading top 10 systems for the project
     (SELECT SYSTEM['name'] AS system_name
      FROM pypi
      WHERE system_name != ''
@@ -86,6 +89,7 @@ WHERE (project = 'boto3')
   AND (timestamp >= DATEADD(days, -84, '2023-06-23 08:33:59'::DateTime))
   AND timestamp <= DATEADD(days, -39, '2023-06-23 08:33:59'::DateTime)
   AND system_name IN
+  -- sub query reading top 10 systems for the project
     (SELECT SYSTEM['name'] AS system_name
      FROM pypi
      WHERE system_name != ''
@@ -97,7 +101,6 @@ GROUP BY period,
          system_name
 ORDER BY period,
          c DESC;
-
 ```
 
 ## Test configurations
@@ -264,9 +267,24 @@ CREATE OR REPLACE MATERIALIZED VIEW cnt_by_system AS SELECT project, system['nam
 ALTER MATERIALIZED VIEW cnt_by_system CLUSTER BY (project);
 ```
 
-Note how we cluster our materialized view. This can take some time to take effect but should use minimal credits e.g.
+Note how we cluster our materialized view. This can take some time to take effect. Not this can incur additional credits in both maintenance and clustering:
 
 ```sql
+SELECT TO_DATE(start_time) AS date,
+    database_name,
+    schema_name,
+    table_name,
+    SUM(credits_used) AS credits_used
+FROM snowflake.account_usage.materialized_view_refresh_history
+WHERE start_time >= DATEADD(month,-1,CURRENT_TIMESTAMP())
+GROUP BY 1,2,3,4
+ORDER BY 5 DESC;
+
++------------+---------------+-------------+---------------+--------------+
+| DATE       | DATABASE_NAME | SCHEMA_NAME | TABLE_NAME    | CREDITS_USED |
+|------------+---------------+-------------+---------------+--------------|
+| 2023-06-28 | PYPI          | PYPI        | CNT_BY_SYSTEM | 61.555391826 |
++------------+---------------+-------------+---------------+--------------+
 
 SELECT TO_DATE(start_time) AS date,
     database_name,

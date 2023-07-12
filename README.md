@@ -16,21 +16,17 @@ Todo
 
 ## Limitations
 
-The limitations of this benchmark allow keeping it easy to reproduce and to include more systems in the comparison. The benchmark represents a specific workload to power a real-time analytics application using a single table. 
+The benchmark represents a specific workload to power a real-time analytics application using a single table. The following limitations should be acknowledged:
 
-The following limitations should be acknowledged:
-
-- The dataset is represented by one flat table. Snowflake may be better when using multiple tables and joins. 
-- The table consists of 65 billion records. This is rather moderate by modern standards but allows tests to be performed in a reasonable time (and Snowflake credit cost!). The full PYPI dataset is 570 billion records as of June 2023. We encourage anyone, with sufficient $$$, to run this test!
-- The test has been exclusively tested on Snowflake and ClickHouse Cloud - both of which are  multi-node and serverless cloud-native setups. Performance may vary on self-managed ClickHouse nodes.
-- The benchmark runs queries one after another (focusing on absolute latency) and does not test a workload with concurrent requests; neither does it test for system capacity. Every query is run only a few times, and this allows some variability in the results. A more accurate test would run the queries concurrently, thus replicating user behaviour more precisely. We keep queries single threaded for simplicity and to focus on latency. 
-- While we have tried to keep compute comparable, ClickHouse Cloud and Snowflake utilize different node sizes and cpu:memory ratios. This invariably contributes to differences in query latency. We have focused on trying to keep total CPU comparable, giving Snowflake the advantage where possible. We do not expect any queries to be memory intensive - although ClickHouse Cloud often has the advantage with respect to this dimension.
-- We have tried our best to optimize Snowflake. We are ClickHouse experts so would welcome improvements. Improvements should abide by the ethos of keeping resources comparable.
-- We have not considered Snowflake cost when using features (only limiting dataset size to avoid excessive spend). Some features can consume considerable credits (including those such as materialized views which require Enterprise tier). Running all tests is likely to cost approx. $10k. We aim to measure this more precisely in the future.
-- We use a production instance of a ClickHouse Cloud cluster for our examples with a total of 180, 240 or 256 cores.
-- For Snowflake we have predominantly used either a 2XLARGE or 4XLARGER cluster, possessing 256 and 512 cores respectively - the former representing the closest configuration to the above ClickHouse specification. These configurations can be expensive - loading the dataset itself is around $1500 in Snowflake before clustering optimizations are applied. Users can again choose to load subsets to reduce this cost and/or run a limited number of the benchmarks. 
-- While the above configurations provide an obvious compute advantage over the above ClickHouse cluster, ClickHouse has a greater cpu:memory ratio offsetting some of this advantage. We have attempted to avoid memory intensive queries as a result but acknowledge these differences make full comparison challenging. Other differences include local disk sizes, causing variability in FS caching.
-- no multi-cluster
+* The dataset is represented by one flat table. Snowflake may be better when using multiple tables and joins.
+* The table consists of 65 billion records. This is rather moderate by modern standards but allows tests to be performed in a reasonable time (and Snowflake credit cost!). The full PYPI dataset is 570 billion records as of June 2023. We encourage anyone with sufficient finance to run this test!
+* The test has been exclusively tested on Snowflake and ClickHouse Cloud - both of which are multi-node and serverless cloud-native setups. Performance may vary on self-managed ClickHouse nodes.
+* The benchmark runs queries one after another (focusing on absolute latency) and does not test a workload with concurrent requests; neither does it test for system capacity. Every query is run only a few times, and this allows some variability in the results. A more accurate test would run the queries concurrently, thus replicating user behavior more precisely. We keep queries single-threaded for simplicity and to focus on latency, deferring concurrency to later testing. Given our benchmark does not consider concurrency, we have also not looked at Snowflake's multi-cluster support. This is designed to [address scaling of query throughput](https://docs.snowflake.com/en/user-guide/warehouses-multicluster#benefits-of-multi-cluster-warehouses) and not latency and is thus not relevant to our workload.
+* While we have tried to keep resources comparable, ClickHouse Cloud and Snowflake utilize different node sizes and CPU-to-memory ratios. This invariably contributes to differences in query latency. We have focused on trying to keep total CPU comparable, giving Snowflake the advantage where possible. We do not expect any queries to be memory intensive - although ClickHouse Cloud often has the advantage with respect to this dimension. We use a production instance of a ClickHouse Cloud service for our examples with a total of 177, 240, or 256 cores. For Snowflake, we have predominantly used either a 2XLARGE or 4XLARGER cluster, possessing 256 and 512 cores, respectively - the former representing the closest configuration to the above ClickHouse specification. These configurations can be expensive - loading the dataset itself is around $1500 in Snowflake before clustering optimizations are applied. Users can again choose to load subsets to reduce this cost and/or run a limited number of benchmarks.
+* While the above configurations provide an obvious compute advantage over the above ClickHouse cluster, ClickHouse has a greater CPU-to-memory ratio, offsetting some of this advantage. We have attempted to avoid memory-intensive queries as a result but acknowledge these differences make full comparison challenging. Other differences include local disk sizes, causing variability in FS caching.
+* For our benchmarks, we assume the data is static. In reality, we would need to insert data into ClickHouse and Snowflake for recent downloads continuously. We defer this to a later exercise. With around 800 million downloads per day, we wouldn't expect inserts to measurably impact Snowflake's or ClickHouse's performance if batch loaded.
+* Although not formally documented, we assume each Snowflake unit is equivalent to 8 cores and 16GB RAM, e.g., a small warehouse of 2 units thus has 16 cores and 32GB of RAM. This appears to be [well understood](https://select.dev/posts/snowflake-warehouse-sizing) and a reasonable assumption.
+* Given this benchmark does not consider concurrency, we have also not tested Snowflake’s multi-cluster support. This is designed to address scaling of query throughput, and not latency, and is thus not relevant to our workload.
 
 Ultimately, the goal of the benchmark is to give the numbers for comparison and let you derive the conclusions on your own.
 
@@ -94,6 +90,8 @@ USE ROLE ACCOUNTADMIN;
 CREATE DATABASE PYPI
 -- transient tables as we don't need time travel
 create  TRANSIENT schema PYPI DATA_RETENTION_TIME_IN_DAYS = 0;
+-- create file format
+CREATE FILE FORMAT my_pypi_format TYPE = parquet;
 -- connect to gcs
 CREATE STORAGE INTEGRATION gcs_int
   TYPE = EXTERNAL_STAGE
