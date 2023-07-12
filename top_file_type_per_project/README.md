@@ -153,7 +153,6 @@ To use this optimization the queries must be modified. An adapted set of queries
 export QUERY_FILE=file_type_mv_clickhouse_queries.sql
 ```
 
-
 ### Snowflake
 
 #### File Type Materialized View 
@@ -190,3 +189,34 @@ ORDER BY 5 DESC;
 ```
 
 To utilize the view we have modified the queries (see `file_type_mv_snowflake_queries.sql`) to explicitly use the materialized view (it is probably possible to avoid this but this is a convenience improvement only) - thus the test needs to be run using `export QUERY_FILE='file_type_mv_snowflake_queries.sql''`.
+
+## Results
+
+![results.png](results.png)
+
+![result_charts.png](result_charts.png)
+
+Observations:
+
+- ClickHouse is at least 2x faster on both hot and cold queries. Both ClickHouse and Snowflake are also approximately twice as fast for their respective hot queries than the cold. 
+- Both systems benefit from time filters being rounded to the nearest day, with mean performance faster than previous tests.
+
+### Materialized views
+
+Since our drill-down queries round to the nearest day, these queries can be easily converted to materialized views in both technologies. 
+
+While these are not equivalent features in Snowflake and ClickHouse, they can both be used to store summarized versions of the data which will be updated at insert time. 
+
+Our modified queries can be found [above](#optimizations).
+
+These views have a considerable impact on our performance:
+
+![materialized_results.png](materialized_results.png)
+
+![materialized_results_charts.png](materialized_results_charts.png)
+
+Observations:
+
+- This materialized view halves the performance of our cold queries for ClickHouse, with the hot queries benefiting by greater than 4x - even high percentiles run in low milliseconds as a result. 
+- Snowflake performance improves by a similar amount for cold and hot queries - 2x to 2x. 
+- This leads to a bigger gap in performance between ClickHouse and Snowflake, with the former at least x3 faster.

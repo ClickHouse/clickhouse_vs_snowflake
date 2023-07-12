@@ -79,3 +79,12 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 |        default       | Default table configuration and schema for ClickHouse with  `ORDER BY (project, date, timestamp)`. No secondary index, materialized views or projections. |         Default table config and schema. No clustering or materialized views.         |
 | date_project_cluster |                                                                             NA                                                                            | CLUSTER ON (to_date(timestamp), project). Automatic clustering allowed to take effect |
 
+## Results
+
+We used the clustering key `to_date(timestamp), project` for Snowflake in these tests. When considering compression, hot and cold performance, and response time on both the initial and drill down query this performs well.
+
+![results.png](results.png)
+
+![results_chart.png](results_chart.png)
+
+**For hot queries, ClickHouse is at least x2 faster than Snowflake. This is almost maintained for cold queries.**
