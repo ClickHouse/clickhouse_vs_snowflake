@@ -163,8 +163,9 @@ The following warehouse/service sizes in Snowflake and ClickHouse Cloud were use
 
 Results below:
 
-|  Database  | Time to Insert (secs) | Total Load Time (secs)   |
-|:----------:|:---------------------:|:------------------------:|
-| ClickHouse |                       |                          |
+|     Database    | Total Load Time (secs) * |
+|:---------------:|:------------------------:|
+| ClickHouse 23.6 |           11410          |
+| ClickHouse 23.8 |           9480           |
 
-Despite having less rows in total, this dataset takes longer to load with ClickHouse. This suggests ClickHouse benefits from 10mb parquet files and 150mb files are beneficial to Snowflake.
+While we can see total performance has improved with 23.8, this dataset takes longer to load despite having less rows in total. This suggests ClickHouse benefits from 10mb parquet files and 150mb files are prefered by Snowflake.
