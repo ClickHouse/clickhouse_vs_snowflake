@@ -101,7 +101,7 @@ SELECT
 	rustc_version,
 	tls_protocol,
 	tls_cipher
-FROM s3Cluster('default', 'https://storage.googleapis.com/clickhouse_public_datasets/pypi/file_downloads/2023/*.parquet', 'Parquet', 'timestamp DateTime64(6), country_code LowCardinality(String), url String, project String, `file.filename` String, `file.project` String, `file.version` String, `file.type` String, `installer.name` String, `installer.version` String, python String, `implementation.name` String, `implementation.version` String, `distro.name` String, `distro.version` String, `distro.id` String, `distro.libc.lib` String, `distro.libc.version` String, `system.name` String, `system.release` String, cpu String, openssl_version String, setuptools_version String, rustc_version String,tls_protocol String, tls_cipher String')
+FROM s3Cluster('default', 'https://storage.googleapis.com/clickhouse_public_datasets/pypi/file_downloads/sample/*.parquet', 'Parquet', 'timestamp DateTime64(6), country_code LowCardinality(String), url String, project String, `file.filename` String, `file.project` String, `file.version` String, `file.type` String, `installer.name` String, `installer.version` String, python String, `implementation.name` String, `implementation.version` String, `distro.name` String, `distro.version` String, `distro.id` String, `distro.libc.lib` String, `distro.libc.version` String, `system.name` String, `system.release` String, cpu String, openssl_version String, setuptools_version String, rustc_version String,tls_protocol String, tls_cipher String')
 SETTINGS parallel_distributed_insert_select = 2, input_format_null_as_default = 1, input_format_parquet_import_nested = 1, max_insert_block_size = 100000000, min_insert_block_size_rows = 100000000, min_insert_block_size_bytes = 500000000, parts_to_throw_insert = 50000, max_insert_threads = N
 ```
 
@@ -155,7 +155,7 @@ copy into PYPI from (select
 	$1:tls_protocol	as tls_protocol,
 	$1:tls_cipher 	as tls_cipher
 	from @pypi_stage_2023)
-pattern= 'pypi/file_downloads/2023/.*'
+pattern= 'pypi/file_downloads/sample/.*'
 ```
 
 We perform a similar transformation as used for ClickHouse in our `copy into` statement. We are required to convert our timestamp, an integer in the Parquet file, into a timestamp via the `to_timestamp` function. Further details on the $ transformation syntax can be found [here](https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#transformation-parameters).
@@ -186,45 +186,68 @@ The above timings do not include any clustering time for Snowflake. As shown bel
 Tracking the number of parts over time in ClickHouse can be achieved with the following query:
 
 ```sql
-WITH 
+WITH
     'default' AS db_name,
     'pypi' AS table_name,
-    10 AS interval_minutes, -- NEED TO CHANGE FILL STEP accordingly - see WITH FILL STEP below
-    (SELECT uuid FROM system.tables WHERE database = db_name and name = table_name) AS table_id, 
-    (SELECT min(event_time) FROM system.part_log WHERE table_uuid = table_id) AS start_time,
-    T1 AS (
+    60 AS interval_seconds,
+    (
+        SELECT uuid
+        FROM system.tables
+        WHERE (database = db_name) AND (name = table_name)
+    ) AS table_id,
+    (
+        SELECT min(event_time)
+        FROM system.part_log
+        WHERE table_uuid = table_id
+    ) AS start_time
+SELECT
+    toStartOfInterval(event_time, toIntervalSecond(interval_seconds)) AS t,
+    dateDiff('second', toStartOfInterval(start_time, toIntervalSecond(interval_seconds)), t) AS seconds,
+    max(value) AS parts
+FROM clusterAllReplicas(default, system.asynchronous_metric_log)
+WHERE (event_time >= start_time) AND (metric = 'MaxPartCountForPartition')
+GROUP BY t
+ORDER BY t ASC
+SETTINGS skip_unavailable_shards = 1
+```
+
+To identify the time taken to 3000 parts the following query can be used:
+
+```sql
+WITH
+    'default' AS db_name,
+    'pypi' AS table_name,
+    1 AS interval_seconds,
+    (
+        SELECT (query_start_time, event_time)
+        FROM clusterAllReplicas(default, system.query_log)
+        WHERE has(tables, concat(db_name, '.', table_name)) AND (length(tables) = 1) AND is_initial_query AND (query_kind = 'Insert') AND (type = 'QueryFinish')
+        ORDER BY event_time_microseconds DESC
+        LIMIT 1
+    ) AS T0,
+    (
+        SELECT T0.1
+    ) AS query_start_time,
+    (
+        SELECT T0.2
+    ) AS query_end_time,
+    T1 AS
+    (
         SELECT
-            toStartOfInterval(event_time, toIntervalMinute(interval_minutes)) AS t,
-            countIf(event_type != 'RemovePart') as add_events,
-            countIf(event_type = 'RemovePart') as remove_events
-        FROM
-            system.part_log
-        WHERE
-            table_uuid = table_id
-        GROUP BY
-            t
-        ORDER BY t ASC WITH FILL STEP (10 * 60)
-    ),
-    T2 AS (
-        SELECT
-            groupArray(t) AS t,
-            groupArrayMovingSum(add_events) AS add_events,
-            groupArrayMovingSum(remove_events) AS remove_events
-        FROM T1
-    ),
-    T3 AS (
-        SELECT
-            t,
-            arrayMap(e -> e.1 - e.2, arrayZip(add_events, remove_events)) as events
-        FROM T2
+            toStartOfInterval(event_time, toIntervalSecond(interval_seconds)) AS t,
+            dateDiff('second', toStartOfInterval(query_start_time, toIntervalSecond(interval_seconds)), t) AS seconds,
+            max(value) AS parts
+        FROM clusterAllReplicas(default, system.asynchronous_metric_log)
+        WHERE (event_time >= query_start_time) AND (metric = 'MaxPartCountForPartition')
+        GROUP BY t
+        ORDER BY t DESC
     )
-SELECT 
-    -- t, 
-    dateDiff('minute', toStartOfInterval(start_time, toIntervalMinute(interval_minutes)), t) AS min,
-    events 
-FROM T3
-ARRAY JOIN
-    t, 
-    events
-ORDER BY t ASC;
+SELECT
+    seconds,
+    parts
+FROM T1
+WHERE (t >= query_end_time) AND (parts <= 3000)
+ORDER BY seconds ASC
+LIMIT 1
+SETTINGS skip_unavailable_shards = 1
 ```

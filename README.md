@@ -109,8 +109,8 @@ SELECT
     rustc_version AS rustc_version,
     tls_protocol,
     tls_cipher
-FROM s3Cluster('default', 'https://storage.googleapis.com/clickhouse_public_datasets/pypi/file_downloads/2023/*.parquet', 'Parquet', 'timestamp DateTime64(6), country_code LowCardinality(String), url String, project String, `file.filename` String, `file.project` String, `file.version` String, `file.type` String, `installer.name` String, `installer.version` String, python String, `implementation.name` String, `implementation.version` String, `distro.name` String, `distro.version` String, `distro.id` String, `distro.libc.lib` String, `distro.libc.version` String, `system.name` String, `system.release` String, cpu String, openssl_version String, setuptools_version String, rustc_version String,tls_protocol String, tls_cipher String')
-SETTINGS input_format_null_as_default = 1, input_format_parquet_import_nested = 1, max_insert_block_size = 100000000, min_insert_block_size_rows = 100000000, min_insert_block_size_bytes = 500000000, parts_to_throw_insert = 50000, max_insert_threads = 16
+FROM s3Cluster('default', 'https://storage.googleapis.com/clickhouse_public_datasets/pypi/file_downloads/sample/*.parquet', 'Parquet', 'timestamp DateTime64(6), country_code LowCardinality(String), url String, project String, `file.filename` String, `file.project` String, `file.version` String, `file.type` String, `installer.name` String, `installer.version` String, python String, `implementation.name` String, `implementation.version` String, `distro.name` String, `distro.version` String, `distro.id` String, `distro.libc.lib` String, `distro.libc.version` String, `system.name` String, `system.release` String, cpu String, openssl_version String, setuptools_version String, rustc_version String,tls_protocol String, tls_cipher String')
+SETTINGS input_format_null_as_default = 1, input_format_parquet_import_nested = 1, max_insert_block_size = 100000000, min_insert_block_size_rows = 100000000, min_insert_block_size_bytes = 500000000, parts_to_throw_insert = 50000, max_insert_threads = 16, parallel_distributed_insert_select=2
 ```
 
 See specific sub folders for potential schema optimizations for each query type.
@@ -134,8 +134,8 @@ CREATE STORAGE INTEGRATION gcs_int
   ENABLED = TRUE
   STORAGE_ALLOWED_LOCATIONS = ('gcs://clickhouse_public_datasets/');
 -- create staging area for test data
-create stage PYPI_STAGE_2023
-  url='gcs://clickhouse_public_datasets/pypi/file_downloads/2023'
+create stage PYPI_STAGE_SAMPLE
+  url='gcs://clickhouse_public_datasets/pypi/file_downloads/sample'
   storage_integration = gcs_int
   file_format = my_pypi_format;
 -- create table (transient as no time travel needed)
@@ -179,8 +179,8 @@ copy into PYPI from (select
     $1:rustc_version         as rustc_version,
     $1:tls_protocol    as tls_protocol,
     $1:tls_cipher     as tls_cipher
-    from @pypi_stage_2023)
-pattern= 'pypi/file_downloads/2023/.*'
+    from @PYPI_STAGE_SAMPLE)
+pattern= 'pypi/file_downloads.*'
 
 -- disable query cache
 ALTER USER <user> SET USE_CACHED_RESULT = false;
