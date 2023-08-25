@@ -65,6 +65,8 @@ The benchmark represents a specific workload to power a real-time analytics appl
 
 Ultimately, the goal of the benchmark is to give the numbers for comparison and let you derive the conclusions on your own.
 
+## Schemas and data loading
+
 ### ClickHouse
 
 ```sql
