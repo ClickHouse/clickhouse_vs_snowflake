@@ -4,8 +4,11 @@ This test evaluates the insert performance into ClickHouse and Snowflake, using 
 
 ## Assumptions
 
-- the GCS bucket and Warehouse/Service are located in the same provider and region - GCE `us-central-1` in our case.
-- In order to optimize insert performance, we have followed [Snowflakes best practices](https://docs.snowflake.com/en/user-guide/data-load-considerations-prepare) and kept Parquet files around 150MB.  
+- The GCS bucket and Warehouse/Service are located in the same provider and region - GCE `us-central-1` in our case.
+- In order to optimize insert performance, we have followed [Snowflakes best practices](https://docs.snowflake.com/en/user-guide/data-load-considerations-prepare) and kept Parquet files around 150MB. A [test with smaller files](./small_files/README.md) (around 10MB) confirmed the need to follow these best practices.
+- 
+
+Note: These results use a standard MergeTree for ClickHouse. Results demonstrating ClickHouse's ability to linearly scale insert throughput with CPU can be found under [shared_merge_tree](./shared_merge_tree/).
 
 ## Schemas
 
@@ -101,7 +104,7 @@ SELECT
 	rustc_version,
 	tls_protocol,
 	tls_cipher
-FROM s3Cluster('default', 'https://storage.googleapis.com/clickhouse_public_datasets/pypi/file_downloads/sample/*.parquet', 'Parquet', 'timestamp DateTime64(6), country_code LowCardinality(String), url String, project String, `file.filename` String, `file.project` String, `file.version` String, `file.type` String, `installer.name` String, `installer.version` String, python String, `implementation.name` String, `implementation.version` String, `distro.name` String, `distro.version` String, `distro.id` String, `distro.libc.lib` String, `distro.libc.version` String, `system.name` String, `system.release` String, cpu String, openssl_version String, setuptools_version String, rustc_version String,tls_protocol String, tls_cipher String')
+FROM s3Cluster('default', 'https://storage.googleapis.com/clickhouse_public_datasets/pypi/file_downloads/sample/2023/*.parquet', 'Parquet', 'timestamp DateTime64(6), country_code LowCardinality(String), url String, project String, `file.filename` String, `file.project` String, `file.version` String, `file.type` String, `installer.name` String, `installer.version` String, python String, `implementation.name` String, `implementation.version` String, `distro.name` String, `distro.version` String, `distro.id` String, `distro.libc.lib` String, `distro.libc.version` String, `system.name` String, `system.release` String, cpu String, openssl_version String, setuptools_version String, rustc_version String,tls_protocol String, tls_cipher String')
 SETTINGS parallel_distributed_insert_select = 2, input_format_null_as_default = 1, input_format_parquet_import_nested = 1, max_insert_block_size = 100000000, min_insert_block_size_rows = 100000000, min_insert_block_size_bytes = 500000000, parts_to_throw_insert = 50000, max_insert_threads = N
 ```
 
@@ -133,7 +136,7 @@ CREATE STORAGE INTEGRATION gcs_int
   STORAGE_ALLOWED_LOCATIONS = ('gcs://clickhouse_public_datasets/');
 -- create staging area for test data
 create stage PYPI_STAGE_2023
-  url='gcs://clickhouse_public_datasets/pypi/file_downloads/2023'
+  url='gcs://clickhouse_public_datasets/pypi/file_downloads/sample/2023'
   storage_integration = gcs_int
   file_format = my_pypi_format;
 -- copy files into table via stage
@@ -155,14 +158,14 @@ copy into PYPI from (select
 	$1:tls_protocol	as tls_protocol,
 	$1:tls_cipher 	as tls_cipher
 	from @pypi_stage_2023)
-pattern= 'pypi/file_downloads/sample/.*'
+pattern= 'pypi/file_downloads/sample/2023/.*'
 ```
 
 We perform a similar transformation as used for ClickHouse in our `copy into` statement. We are required to convert our timestamp, an integer in the Parquet file, into a timestamp via the `to_timestamp` function. Further details on the $ transformation syntax can be found [here](https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#transformation-parameters).
 
 ## Results
 
-In order to test the load performance of ClickHouse and Snowflake, we have tested a number of service and warehouse sizes of approximately the same total compute. In addition, we report the insert performance for ClickHouse with varying numbers of threads, the final number of parts and the time taken for merges to reduce the part count to under 300 (default recommended total).
+In order to test the load performance of ClickHouse and Snowflake, we have tested a number of service and warehouse sizes of approximately the same total compute. In addition, we report the insert performance for ClickHouse with varying numbers of threads, the final number of parts and the time taken for merges to reduce the part count to under 3000 (default recommended total).
 
 **Number of files: 70608**
 
@@ -174,9 +177,9 @@ In order to test the load performance of ClickHouse and Snowflake, we have teste
 
 Observations:
 
-- On clusters with fewer nodes but with more cores per node, e.g. (708GB configuration), ClickHouse completes the initial insert operation faster. However, time is then spent merging parts below an acceptable threshold. This operation is single-threaded and thus bound by the number of nodes. We compare this time to Snowflake for a fair comparison and assume that Snowflake is ready for querying immediately - this will not be the case if clustering is also applied. However, if we spread our resources across more nodes (960GB has 8 x 30 core nodes), merges occur faster, resulting in a faster completion time. 
+- On clusters with fewer nodes but with more vCPUs per node, e.g. (708GB configuration), ClickHouse completes the initial insert operation faster. However, time is then spent merging parts below an acceptable threshold. This operation is single-threaded and thus bound by the number of nodes. We compare this time to Snowflake for a fair comparison and assume that Snowflake is ready for querying immediately - this will not be the case if clustering is also applied. However, if we spread our resources across more nodes (960GB has 8 x 30 core nodes), merges occur faster, resulting in a faster completion time. 
 - Decreasing the threads for ClickHouse, while reducing the insert performance ensures the total parts are always close to 3000 and is likely preferable in most production settings - as illustrated by examples where the lower thread count is faster for the same hardware. We recommend users tune the `max_insert_threads` to values that keep parts manageable, thus avoiding the need to track post-insert. Furthermore, higher thread counts require more memory. This limits the total threads possible (although for reasons above to the detriment of total time) on configurations with lower memory per node.
-- Snowflake does exhibit linear improvements in load time to the number of cores. This is commendable and means the total cost to the user remains constant, i.e., a 4XLARGE warehouse is twice the cost as a 2XLARGE, but the load time is half. The user can, in turn, make the warehouse idle on completion, incurring the same total charge.
+- Snowflake does exhibit linear improvements in load time to the number of vCPUs. This is commendable and means the total cost to the user remains constant, i.e., a 4XLARGE warehouse is twice the cost as a 2XLARGE, but the load time is half. The user can, in turn, make the warehouse idle on completion, incurring the same total charge.
 - Snowflake appears to struggle with smaller parquet files which have not been optimally aligned with the recommended size of 150MB. The full PYPI dataset, consisting of over 1.5m files and 19 TiB, has a much smaller average file size of 13 MB. While ClickHouse is able to parallelize reads across these files and incurs no significant fall in performance, Snowflake proved considerably impacted.
 
 The above timings do not include any clustering time for Snowflake. As shown below, this significantly impacts query performance. ClickHouse timings above include all costs to order the data and represent an optimal state. If clustering times are included, Snowflake is significantly slower - this is challenging to measure as clustering is asynchronous, and its scheduling is non-deterministic.

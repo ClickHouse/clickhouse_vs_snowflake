@@ -179,7 +179,7 @@ Observations:
 
 - Clustering is clearly critical to Snowflake performance for real-time analytics, with an average response time and relative performance of 7s and 44x for non-clustered performance. 
 - For clusters with comparable resources, ClickHouse outperforms Snowflake by at least 3x on the mean and 2x on the 95th and 99th percentile. 
-- ClickHouse with 177 cores even outperforms a 4XLARGE Snowflake warehouse with 1024 cores. This suggests our specific workload gains no benefit from no further parallelization.  
+- ClickHouse with 177 vCPUs even outperforms a 4XLARGE Snowflake warehouse with 1024 vCPUs. This suggests our specific workload gains no benefit from no further parallelization.  
 
 The use of the single clustering key `project` also offers marginally better performance than `project, to_date(timestamp)` despite poorer compression. This can be attributed to faster performance on only the initial query for each project, which queries the entire 90 days. Drill down queries are slower, as shown below, if we limit analysis to only the 2nd drill-down query for each project. 
 

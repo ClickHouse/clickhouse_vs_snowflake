@@ -1,5 +1,7 @@
 # ClickHouse vs Snowflake for Real-time Analytics
 
+These tests were performed on ClickHouse 23.6 unless stated and the first 2 weeks of June for Snowflake.
+
 ## Goals
 
 To provide a real-time analytics benchmark comparing ClickHouse and Snowflake when resources are comparable and all effort is made to optimize both.
@@ -57,10 +59,10 @@ The benchmark represents a specific workload to power a real-time analytics appl
 * The table consists of 65 billion records. This is rather moderate by modern standards but allows tests to be performed in a reasonable time (and Snowflake credit cost!). The full PYPI dataset is 570 billion records as of June 2023. We encourage anyone with sufficient finance to run this test!
 * The test has been exclusively tested on Snowflake and ClickHouse Cloud - both of which are multi-node and serverless cloud-native setups. Performance may vary on self-managed ClickHouse nodes.
 * The benchmark runs queries one after another (focusing on absolute latency) and does not test a workload with concurrent requests; neither does it test for system capacity. Every query is run only a few times, and this allows some variability in the results. A more accurate test would run the queries concurrently, thus replicating user behavior more precisely. We keep queries single-threaded for simplicity and to focus on latency, deferring concurrency to later testing. Given our benchmark does not consider concurrency, we have also not looked at Snowflake's multi-cluster support. This is designed to [address scaling of query throughput](https://docs.snowflake.com/en/user-guide/warehouses-multicluster#benefits-of-multi-cluster-warehouses) and not latency and is thus not relevant to our workload.
-* While we have tried to keep resources comparable, ClickHouse Cloud and Snowflake utilize different node sizes and CPU-to-memory ratios. This invariably contributes to differences in query latency. We have focused on trying to keep total CPU comparable, giving Snowflake the advantage where possible. We do not expect any queries to be memory intensive - although ClickHouse Cloud often has the advantage with respect to this dimension. We use a production instance of a ClickHouse Cloud service for our examples with a total of 177, 240, or 256 cores. For Snowflake, we have predominantly used either a 2XLARGE or 4XLARGER cluster, possessing 256 and 512 cores, respectively - the former representing the closest configuration to the above ClickHouse specification. These configurations can be expensive - loading the dataset itself is around $1500 in Snowflake before clustering optimizations are applied. Users can again choose to load subsets to reduce this cost and/or run a limited number of benchmarks.
+* While we have tried to keep resources comparable, ClickHouse Cloud and Snowflake utilize different node sizes and CPU-to-memory ratios. This invariably contributes to differences in query latency. We have focused on trying to keep total CPU comparable, giving Snowflake the advantage where possible. We do not expect any queries to be memory intensive - although ClickHouse Cloud often has the advantage with respect to this dimension. We use a production instance of a ClickHouse Cloud service for our examples with a total of 177, 240, or 256 vCPUs. For Snowflake, we have predominantly used either a 2XLARGE or 4XLARGER cluster, possessing 256 and 512 vCPUs, respectively - the former representing the closest configuration to the above ClickHouse specification. These configurations can be expensive - loading the dataset itself is around $1500 in Snowflake before clustering optimizations are applied. Users can again choose to load subsets to reduce this cost and/or run a limited number of benchmarks.
 * While the above configurations provide an obvious compute advantage over the above ClickHouse cluster, ClickHouse has a greater CPU-to-memory ratio, offsetting some of this advantage. We have attempted to avoid memory-intensive queries as a result but acknowledge these differences make full comparison challenging. Other differences include local disk sizes, causing variability in FS caching.
 * For our benchmarks, we assume the data is static. In reality, we would need to insert data into ClickHouse and Snowflake for recent downloads continuously. We defer this to a later exercise. With around 800 million downloads per day, we wouldn't expect inserts to measurably impact Snowflake's or ClickHouse's performance if batch loaded.
-* Although not formally documented, we assume each Snowflake unit is equivalent to 8 cores and 16GB RAM, e.g., a small warehouse of 2 units thus has 16 cores and 32GB of RAM. This appears to be [well understood](https://select.dev/posts/snowflake-warehouse-sizing) and a reasonable assumption.
+* Although not formally documented, we assume each Snowflake unit is equivalent to 8 vCPUs and 16GB RAM, e.g., a small warehouse of 2 units thus has 16 vCPUs and 32GB of RAM. This appears to be [well understood](https://select.dev/posts/snowflake-warehouse-sizing) and a reasonable assumption.
 * Given this benchmark does not consider concurrency, we have also not tested Snowflake’s multi-cluster support. This is designed to address scaling of query throughput, and not latency, and is thus not relevant to our workload.
 
 Ultimately, the goal of the benchmark is to give the numbers for comparison and let you derive the conclusions on your own.
@@ -111,7 +113,7 @@ SELECT
     rustc_version AS rustc_version,
     tls_protocol,
     tls_cipher
-FROM s3Cluster('default', 'https://storage.googleapis.com/clickhouse_public_datasets/pypi/file_downloads/sample/*.parquet', 'Parquet', 'timestamp DateTime64(6), country_code LowCardinality(String), url String, project String, `file.filename` String, `file.project` String, `file.version` String, `file.type` String, `installer.name` String, `installer.version` String, python String, `implementation.name` String, `implementation.version` String, `distro.name` String, `distro.version` String, `distro.id` String, `distro.libc.lib` String, `distro.libc.version` String, `system.name` String, `system.release` String, cpu String, openssl_version String, setuptools_version String, rustc_version String,tls_protocol String, tls_cipher String')
+FROM s3Cluster('default', 'https://storage.googleapis.com/clickhouse_public_datasets/pypi/file_downloads/sample/2023/*.parquet', 'Parquet', 'timestamp DateTime64(6), country_code LowCardinality(String), url String, project String, `file.filename` String, `file.project` String, `file.version` String, `file.type` String, `installer.name` String, `installer.version` String, python String, `implementation.name` String, `implementation.version` String, `distro.name` String, `distro.version` String, `distro.id` String, `distro.libc.lib` String, `distro.libc.version` String, `system.name` String, `system.release` String, cpu String, openssl_version String, setuptools_version String, rustc_version String,tls_protocol String, tls_cipher String')
 SETTINGS input_format_null_as_default = 1, input_format_parquet_import_nested = 1, max_insert_block_size = 100000000, min_insert_block_size_rows = 100000000, min_insert_block_size_bytes = 500000000, parts_to_throw_insert = 50000, max_insert_threads = 16, parallel_distributed_insert_select=2
 ```
 
@@ -137,7 +139,7 @@ CREATE STORAGE INTEGRATION gcs_int
   STORAGE_ALLOWED_LOCATIONS = ('gcs://clickhouse_public_datasets/');
 -- create staging area for test data
 create stage PYPI_STAGE_SAMPLE
-  url='gcs://clickhouse_public_datasets/pypi/file_downloads/sample'
+  url='gcs://clickhouse_public_datasets/pypi/file_downloads/sample/2023'
   storage_integration = gcs_int
   file_format = my_pypi_format;
 -- create table (transient as no time travel needed)
@@ -182,7 +184,7 @@ copy into PYPI from (select
     $1:tls_protocol    as tls_protocol,
     $1:tls_cipher     as tls_cipher
     from @PYPI_STAGE_SAMPLE)
-pattern= 'pypi/file_downloads.*'
+pattern= 'pypi/file_downloads/sample/2023/file_downloads.*'
 
 -- disable query cache
 ALTER USER <user> SET USE_CACHED_RESULT = false;
@@ -316,3 +318,5 @@ A summary page can be generated for each query set. Ensure you have run the test
 ```
 
 This will produce an `index.html` file in the target folder which can be opened in a browser.
+
+

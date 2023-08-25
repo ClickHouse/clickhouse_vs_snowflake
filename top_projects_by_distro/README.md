@@ -103,7 +103,7 @@ export CLICKHOUSE_SETTINGS="use_hedged_requests = 0, allow_experimental_parallel
 Full results [here](./index.html).
 
 ### Enabling Parallel Replicas for ClickHouse
-Below we show the performance benefit of enabling parallel replicas for ClickHouse using the original 708 GB service and ordering key of `project, date, timestamp`. This service contains a total of 177 vCPUs spread over 3 cores.
+Below we show the performance benefit of enabling parallel replicas for ClickHouse using the original 708 GB service and ordering key of `project, date, timestamp`. This service contains a total of 177 vCPUs spread over 3 nodes.
 
 ![results_clickhouse_parallel.png](results_clickhouse_parallel.png)
 
@@ -125,6 +125,6 @@ Parallel replicas are enabled for all results.
 
 Observations:
 
-- For ClickHouse, the best performance is achieved using the largest 1024GB service with 256 cores (the same as Snowflake). 
+- For ClickHouse, the best performance is achieved using the largest 1024GB service with 256 vCPUs (the same as Snowflake). 
 - For these queries Snowflake is faster by around 30%. This can be attributed to the experimental nature of the parallel replicas feature, with it undergoing active development to improve performance. 
 - Snowflake performs well on queries which can be distributed to many nodes and are required to scan significant volumes of data.
