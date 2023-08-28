@@ -28,7 +28,7 @@ CREATE TABLE default.pypi
    `tls_cipher` Enum8('ECDHE-RSA-AES128-GCM-SHA256' = 0, 'ECDHE-RSA-CHACHA20-POLY1305' = 1, 'ECDHE-RSA-AES128-SHA256' = 2, 'TLS_AES_256_GCM_SHA384' = 3, 'AES128-GCM-SHA256' = 4, 'TLS_AES_128_GCM_SHA256' = 5, 'ECDHE-RSA-AES256-GCM-SHA384' = 6, 'AES128-SHA' = 7, 'ECDHE-RSA-AES128-SHA' = 8)
 )
 ENGINE = SharedMergeTree
-ORDER BY (project, date, timestamp)
+ORDER BY (project, date, timestamp);
 ```
 
 ## Data Loading
@@ -64,7 +64,7 @@ SETTINGS
     min_insert_block_size_bytes = 500_000_000,
     parts_to_throw_insert = 50_000,
     max_insert_threads = 16,
-    parallel_distributed_insert_select=2;
+    parallel_distributed_insert_select = 2;
 ```
 
 We created the table and run the data load query on two ClickHouse Cloud services with a different number of nodes.
@@ -79,7 +79,7 @@ We created the table and run the data load query on two ClickHouse Cloud service
 
 ## Results
 
-We show the output from clickhouse-client executing the data load query plus the time (from the start of the data load query execution) it took to merge the parts created during the ingestion to a number of 3000 active parts. The query to identify this time can be found in the [insert_performance](../insert_performance/#misc) section.
+We show the output from clickhouse-client executing the data load query plus the time (from the start of the data load query execution) it took to merge the parts created during the ingestion to a number of 3000 active parts. The query to identify this time can be found in the [insert_performance](../../insert_performance/#misc) section.
 
 ### Service One
 ```sql
