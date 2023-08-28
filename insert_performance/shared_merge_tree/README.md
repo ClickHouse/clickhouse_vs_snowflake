@@ -79,7 +79,7 @@ We created the table and run the data load query on two ClickHouse Cloud service
 
 ## Results
 
-We show the output from clickhouse-client executing the data load query plus the time (from the start of the data load query execution) it took to merge the parts created during the ingestion to a number of 3000 active parts. The query to identify this time can be found in the [insert_performance](./insert_performance/#misc) section.
+We show the output from clickhouse-client executing the data load query plus the time (from the start of the data load query execution) it took to merge the parts created during the ingestion to a number of 3000 active parts. The query to identify this time can be found in the [insert_performance](../insert_performance/#misc) section.
 
 ### Service One
 ```sql
