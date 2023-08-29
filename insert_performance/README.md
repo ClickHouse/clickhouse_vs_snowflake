@@ -5,7 +5,7 @@ This test evaluates the insert performance into ClickHouse and Snowflake, using 
 ## Assumptions
 
 - The GCS bucket and Warehouse/Service are located in the same provider and region - GCE `us-central-1` in our case.
-- In order to optimize insert performance, we have followed [Snowflakes best practices](https://docs.snowflake.com/en/user-guide/data-load-considerations-prepare) and kept Parquet files around 150MB. A [test with smaller files](./small_files/README.md) (around 10MB) confirmed that while Snowflake is comfortable with files of this size, ClickHouse benefits by upto 35%. In the interests of not biasing tests, we have thus used the 150MB size recommended by Snowflake.
+- In order to optimize insert performance, we have followed [Snowflakes best practices](https://docs.snowflake.com/en/user-guide/data-load-considerations-prepare) and kept Parquet files around 150MiB. A [test with smaller files](./small_files/README.md) (around 10MiB) confirmed that while Snowflake is comfortable with files of this size, ClickHouse benefits by upto 35%. In the interests of not biasing tests, we have thus used the 150MiB size recommended by Snowflake.
 
 Note: These results use a standard MergeTree for ClickHouse. Results demonstrating ClickHouse's ability to linearly scale insert throughput with CPU can be found under [shared_merge_tree](./shared_merge_tree/).
 
@@ -120,7 +120,7 @@ While `max_insert_threads` and `parts_to_throw_insert` can potentially be set to
 
 ### Snowflake
 
-In order to optimize insert performance, we have followed [Snowflakes best practices](https://docs.snowflake.com/en/user-guide/data-load-considerations-prepare) and kept Parquet files around 150MB.  
+In order to optimize insert performance, we have followed [Snowflakes best practices](https://docs.snowflake.com/en/user-guide/data-load-considerations-prepare) and kept Parquet files around 150MiB.  
 
 Snowflake requires the user to create an [external stage](https://docs.snowflake.com/en/user-guide/data-load-s3-create-stage#external-stages). We do this using a [storage integration](https://docs.snowflake.com/en/user-guide/data-load-s3-config-storage-integration), which, while not required in this example, is needed if your data is not public.
 
@@ -168,7 +168,7 @@ In order to test the load performance of ClickHouse and Snowflake, we have teste
 
 **Number of files: 70608**
 
-**Average file size: 129 MB**
+**Average file size: 129 MiB**
 
 **Total data size: 8.74TiB of data** 
 
@@ -176,7 +176,7 @@ In order to test the load performance of ClickHouse and Snowflake, we have teste
 
 Observations:
 
-- On clusters with fewer nodes but with more vCPUs per node, e.g. (708GB configuration), ClickHouse completes the initial insert operation faster. However, time is then spent merging parts below an acceptable threshold. This operation is single-threaded and thus bound by the number of nodes. We compare this time to Snowflake for a fair comparison and assume that Snowflake is ready for querying immediately - this will not be the case if clustering is also applied. However, if we spread our resources across more nodes (960GB has 8 x 30 core nodes), merges occur faster, resulting in a faster completion time. 
+- On clusters with fewer nodes but with more vCPUs per node, e.g. (708GiB configuration), ClickHouse completes the initial insert operation faster. However, time is then spent merging parts below an acceptable threshold. This operation is single-threaded and thus bound by the number of nodes. We compare this time to Snowflake for a fair comparison and assume that Snowflake is ready for querying immediately - this will not be the case if clustering is also applied. However, if we spread our resources across more nodes (960GiB has 8 x 30 core nodes), merges occur faster, resulting in a faster completion time. 
 - Decreasing the threads for ClickHouse, while reducing the insert performance ensures the total parts are always close to 3000 and is likely preferable in most production settings - as illustrated by examples where the lower thread count is faster for the same hardware. We recommend users tune the `max_insert_threads` to values that keep parts manageable, thus avoiding the need to track post-insert. Furthermore, higher thread counts require more memory. This limits the total threads possible (although for reasons above to the detriment of total time) on configurations with lower memory per node.
 - Snowflake does exhibit linear improvements in load time to the number of vCPUs. This is commendable and means the total cost to the user remains constant, i.e., a 4XLARGE warehouse is twice the cost as a 2XLARGE, but the load time is half. The user can, in turn, make the warehouse idle on completion, incurring the same total charge.
 
