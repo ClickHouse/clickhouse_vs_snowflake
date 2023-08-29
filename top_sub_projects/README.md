@@ -92,7 +92,7 @@ All tests disable the query cache with `ALTER USER <user> SET USE_CACHED_RESULT 
 
 Bloom filter on project column to speed up LIKE.
 
-Our tests indicate this adds around 81.75MB to our total storage size (compressed). Even uncompressed the overhead is minimal at 7.61GB.
+Our tests indicate this adds around 81.75MiB to our total storage size (compressed). Even uncompressed the overhead is minimal at 7.61GiB.
 
 ```sql
 ALTER TABLE pypi_bloom

@@ -2,7 +2,7 @@
 
 This test asseses the ability for Snowflake and ClickHouse to handle smaller parquet files. Snowflake [recommends a size of 150mb](https://docs.snowflake.com/en/user-guide/data-load-considerations-prepare) for optimal insert performance. ClickHouse imposes no such requirements.
 
-We evaluate insert times for smaller files with an average size of only 10MB.
+We evaluate insert times for smaller files with an average size of only 10MiB.
 
 **This test was performed on 25/08/2023 for both ClickHouse (v23.8.1) and Snowflake.** 
 
@@ -16,8 +16,8 @@ We evaluate insert times for smaller files with an average size of only 10MB.
 ## Dataset
 
 - 3 months of PYPI data
-- 1.06 TB of parquet
-- 109,448 files for an average size of 10MB
+- 1.06 TiB of parquet
+- 109,448 files for an average size of 10MiB
 
 Located under public GCS bucket: `gs://clickhouse_public_datasets/pypi/file_downloads/2023_may_aug/`
 
@@ -144,8 +144,8 @@ pattern= 'pypi/file_downloads/2023_may_aug/file_downloads.*';
 
 The following warehouse/service sizes in Snowflake and ClickHouse Cloud were used:
 
-- `2XLARGE` Snowflake warehouse - 256 vCPUs, 512GB RAM.
-- `708GB` ClickHouse Cloud service - 177 cores, 708GB RAM. 3 nodes.
+- `2XLARGE` Snowflake warehouse - 256 vCPUs, 512GiB RAM.
+- `708GB` ClickHouse Cloud service - 177 cores, 708GiB RAM. 3 nodes.
 
 |  Database  | Time to Insert (secs) | Total Load Time (secs)   |
 |:----------:|:---------------------:|:------------------------:|
@@ -159,7 +159,7 @@ The following warehouse/service sizes in Snowflake and ClickHouse Cloud were use
 - ClickHouse is almost 2.5x faster to perform the initial load on this dataset
 - ClickHouse is 35% faster than Snowflake even when considering the time taken to merge active parts to less than the recommended number of 3000. 
 - Load times for Snowflake appear to be comparable when [files are larger at around 150mb](../README.md). 
-- ClickHouse appears to be faster on 10MB files than 150MB. However, these tests were conducted on a later version of 23.8.1 for which performance improvements have been made. We therefore repeated the test for 150MB files on this version of ClickHouse using the above schema. Note this dataset has fewer rows (65b vs 69b).
+- ClickHouse appears to be faster on 10MiB files than 150MiB. However, these tests were conducted on a later version of 23.8.1 for which performance improvements have been made. We therefore repeated the test for 150MiB files on this version of ClickHouse using the above schema. Note this dataset has fewer rows (65b vs 69b).
 
 Results below:
 

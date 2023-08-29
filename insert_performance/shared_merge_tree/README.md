@@ -70,11 +70,11 @@ SETTINGS
 We created the table and run the data load query on two ClickHouse Cloud services with a different number of nodes.
 
 ### Service One
-- 3 nodes with a total of 177 CPU cores and 708 GB RAM
-- 59 CPU cores and 236 GB RAM per node
+- 3 nodes with a total of 177 CPU cores and 708 GiB RAM
+- 59 CPU cores and 236 GiB RAM per node
 ###  Service Two
-- 6 nodes with a total of 354 CPU cores and 1416 GB RAM
-- 59 CPU cores and 236 GB RAM per node
+- 6 nodes with a total of 354 CPU cores and 1416 GiB RAM
+- 59 CPU cores and 236 GiB RAM per node
 
 
 ## Results
