@@ -2,6 +2,8 @@
 
 These tests were performed on ClickHouse 23.6 unless stated and the first 2 weeks of June for Snowflake.
 
+A full report with the results of these benchmarks can be found [here]().
+
 ## Goals
 
 To provide a real-time analytics benchmark comparing ClickHouse and Snowflake when resources are comparable and all effort is made to optimize both.
