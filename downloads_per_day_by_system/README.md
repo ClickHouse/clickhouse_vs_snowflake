@@ -316,13 +316,13 @@ To utilize the view we have modified the queries (see `cnt_by_system_snowflake_q
 
 Full results [here](./index.html).
 
-### Hot queries
+![results.png](results.png)
 
-![hot_results.png](hot_results.png)
-
-![hot_results_chart.png](hot_results_chart.png)
+![results_chart.png](results_chart.png)
 
 **ClickHouse is at least 2x faster across all metrics for this query.**
+
+ClickHouse also outperforms Snowflake on all but the `max` time for cold queries as well, with the mean being 1.7x faster.
 
 ### Materialized views and projections
 
