@@ -6,7 +6,7 @@ import numpy as np
 
 parser = argparse.ArgumentParser(description='Compute statistics',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('-f', '--result_folder', help='Folder of results', default='downloads_per_day_by_system/results/')
+parser.add_argument('-f', '--result_folder', help='Folder of results', default='top_sub_projects/results/')
 args = parser.parse_args()
 
 files = Path(args.result_folder).glob('*.json')
