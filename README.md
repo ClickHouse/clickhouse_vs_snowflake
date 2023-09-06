@@ -2,7 +2,7 @@
 
 These tests were performed on ClickHouse 23.6 unless stated and the first 2 weeks of June for Snowflake.
 
-A full report with the results of these benchmarks can be found [here]().
+A full report with the results of these benchmarks can be found [here](https://clickhouse.com/blog/clickhouse-vs-snowflake-for-real-time-analytics-benchmarks-cost-analysis).
 
 ## Goals
 
