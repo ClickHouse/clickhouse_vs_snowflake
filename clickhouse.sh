@@ -44,18 +44,18 @@ else
   CLICKHOUSE_SETTINGS="SETTINGS ${CLICKHOUSE_SETTINGS}"
 fi
 
-data_size=$(/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --query="SELECT sum(total_bytes) FROM system.tables WHERE table = 'pypi'")
+data_size=$(clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --query="SELECT sum(total_bytes) FROM system.tables WHERE table = 'pypi'")
 now=$(date +'%Y-%m-%d')
 now_epoch=$(date +%s%N)
 echo "{\"system\":\"ClickHouse\",\"date\":\"${now}\",\"machine\":\"${spec}\",\"config\":\"${config}\",\"comment\":\"\",\"tags\":[\"${tag}\"],\"data_size\":${data_size},\"result\":[" > $folder/clickhouse_temp_${now_epoch}.json
 
 echo "dropping file system cache"
-/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --format=Null --query="SYSTEM DROP FILESYSTEM CACHE${on_cluster}"
+clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --format=Null --query="SYSTEM DROP FILESYSTEM CACHE${on_cluster}"
 
 cat $folder/${QUERY_FILE} | while read query; do
     echo -n "[" >> $folder/clickhouse_temp_${now_epoch}.json
     for i in $(seq 1 $TRIES); do
-        RES=$(/opt/clickhouse-install/clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --time --format=Null --query="${query} ${CLICKHOUSE_SETTINGS};" 2>&1)
+        RES=$(clickhouse client --host "${CLICKHOUSE_HOST:=localhost}" --user "${CLICKHOUSE_USER:=default}" --password "${CLICKHOUSE_PASSWORD:=}" --secure --time --format=Null --query="${query} ${CLICKHOUSE_SETTINGS};" 2>&1)
         if [ "$?" == "0" ] && [ "${#RES}" -lt "10" ]; then
             echo "${QUERY_NUM}, ${i} - OK"
             echo -n "${RES}" >> $folder/clickhouse_temp_${now_epoch}.json
